@@ -1,1 +1,5 @@
+*.log
 .vercel
+.vercel
+dist
+node_modules

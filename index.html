@@ -111,7 +111,7 @@
     <div class="eye">Realtime world monitor</div>
     <h1>GLOBAL <b>PULSE</b></h1>
   </div>
-  <div id="foot">SOURCES · GDELT WORLD NEWS · USGS SEISMIC</div>
+  <div id="foot">SOURCES · GDELT NEWS · USGS SEISMIC · NASA EONET · SPACEFLIGHT</div>
 
   <div id="status">
     <div class="live"><span class="dot"></span><span id="liveTxt">CONNECTING…</span></div>
@@ -157,8 +157,10 @@ document.documentElement.style.setProperty('--scale', TVSCALE);
 const CATS={
   Conflict:{c:'#ff5a4d', label:'Conflict'}, Politics:{c:'#b98cff', label:'Politics'},
   Disaster:{c:'#ff9e3d', label:'Disaster'}, News:{c:'#5fe3ff', label:'World news'},
-  Quake:{c:'#ffd23d', label:'Earthquake'},
+  Quake:{c:'#ffd23d', label:'Earthquake'}, Nature:{c:'#5ce0a0', label:'Natural event'},
+  Space:{c:'#8aa6ff', label:'Spaceflight'},
 };
+const DWELL=17000;   // how long the camera holds on each location (ms)
 const cat=e=>CATS[e&&e.category]||CATS.News;
 const $=id=>document.getElementById(id);
 
@@ -238,11 +240,11 @@ function focusIndex(i,manual){ if(!events.length)return; cur=(i+events.length)%e
   $('pCoords').textContent=ev.lat.toFixed(2)+'°, '+ev.lng.toFixed(2)+'°';
   $('popup').querySelector('.ok').style.background=c.c;
   renderFeed(); const card=document.querySelector('.card[data-id="'+CSS.escape(ev.id)+'"]'); if(card) card.scrollIntoView({block:'nearest'});
-  clearTimeout(resumeT); if(!manual) resumeT=setTimeout(()=>{ world.controls().autoRotate=true; },6500);
+  clearTimeout(resumeT);                 // hold on this location (no auto-rotate) until the next one
   if(manual) pause();
 }
 function focusId(id,manual){ const i=events.findIndex(e=>e.id===id); if(i>=0) focusIndex(i,manual); }
-function pause(){ paused=true; clearTimeout(pauseT); pauseT=setTimeout(()=>paused=false,20000); }
+function pause(){ paused=true; clearTimeout(pauseT); pauseT=setTimeout(()=>paused=false,35000); }
 function tick(){ if(paused||readerOpen||!events.length) return; focusIndex(ptr,false); ptr=(ptr+1)%Math.min(events.length,40); }
 
 /* ---------------- in-app reader ---------------- */
@@ -292,7 +294,7 @@ let toastT=null; function toast(m){ const t=$('toast'); t.textContent=m; t.class
 
 /* ---------------- boot ---------------- */
 refresh(true);
-setInterval(tick, 9000);          // showcase a location every 9s
+setInterval(tick, DWELL);         // hold on each location for DWELL ms, then move on
 setInterval(()=>refresh(false), 90000);  // poll for new events
 setInterval(renderFeed, 30000);   // keep relative times fresh
 

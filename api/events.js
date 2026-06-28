@@ -59,7 +59,7 @@ function cap(s){ return s.replace(/\b\w/g,m=>m.toUpperCase()); }
 
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function getNews(){
-  const q=encodeURIComponent('(breaking OR crisis OR election OR war OR strike OR summit OR protest OR disaster OR killed OR president OR talks) sourcelang:english');
+  const q=encodeURIComponent('(breaking OR crisis OR election OR war OR strike OR summit OR protest OR disaster OR killed OR president OR talks OR attack OR court OR economy OR climate OR deal OR ceasefire) sourcelang:english');
   const url=`https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=ArtList&format=json&maxrecords=75&timespan=150min&sort=DateDesc`;
   let arts=[];
   // GDELT rate-limits to 1 req / 5s per IP; retry a couple of times on the shared serverless egress
@@ -102,19 +102,60 @@ async function getQuakes(){
   }catch(e){ return []; }
 }
 
+// NASA EONET — natural events (wildfires, storms, volcanoes, floods, ice...) with real coords
+async function getEonet(){
+  try{
+    const r=await fetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&days=10&limit=80');
+    const j=await r.json();
+    return (j.events||[]).map(ev=>{
+      const g=ev.geometry&&ev.geometry[ev.geometry.length-1]; if(!g||!g.coordinates) return null;
+      let lng,lat;
+      if(g.type==='Point'){ lng=g.coordinates[0]; lat=g.coordinates[1]; }
+      else { const c=g.coordinates&&g.coordinates[0]&&g.coordinates[0][0]; if(!c) return null; lng=c[0]; lat=c[1]; }
+      if(!Number.isFinite(lat)||!Number.isFinite(lng)) return null;
+      const ct=(ev.categories&&ev.categories[0]&&ev.categories[0].title)||'Natural event';
+      const disaster=/wildfire|storm|flood|volcano|landslide|drought|cyclone|hurricane|temperature/i.test(ct);
+      const link=(ev.sources&&ev.sources[0]&&ev.sources[0].url)||ev.link||'https://eonet.gsfc.nasa.gov/';
+      return { id:'e:'+ev.id, type:'Nature', category:disaster?'Disaster':'Nature',
+        lat:clampLat(lat), lng, title:ev.title, place:ct, time:Date.parse(g.date)||Date.now(), url:link, source:'nasa.gov' };
+    }).filter(Boolean).slice(0,45);
+  }catch(e){ return []; }
+}
+// The Space Devs Launch Library — recent/upcoming rocket launches, geolocated by pad.
+// LL2 free tier is rate-limited (~15/hr), so cache across warm invocations for 20 min.
+let LAUNCHCACHE={ data:[], ts:0 };
+async function getLaunches(){
+  if(LAUNCHCACHE.data.length && Date.now()-LAUNCHCACHE.ts < 20*60*1000) return LAUNCHCACHE.data;
+  try{
+    const r=await fetch('https://ll.thespacedevs.com/2.2.0/launch/?limit=14&ordering=-net&mode=normal',{headers:{'User-Agent':'GlobalPulse/1.0'}});
+    if(!r.ok) return LAUNCHCACHE.data;          // 429/etc -> keep last good
+    const j=await r.json();
+    const out=(j.results||[]).map(l=>{ const pad=l.pad||{}; const lat=parseFloat(pad.latitude), lng=parseFloat(pad.longitude);
+      if(!Number.isFinite(lat)||!Number.isFinite(lng)) return null;
+      return { id:'l:'+l.id, type:'Space', category:'Space', lat, lng,
+        title:l.name||'Rocket launch', place:(pad.location&&pad.location.name)||pad.name||'Launch site',
+        time:Date.parse(l.net)||Date.now(),
+        url:'https://www.google.com/search?q='+encodeURIComponent((l.name||'rocket launch')+' launch'), source:'thespacedevs.com' };
+    }).filter(Boolean);
+    if(out.length) LAUNCHCACHE={ data:out, ts:Date.now() };
+    return out;
+  }catch(e){ return LAUNCHCACHE.data; }
+}
+
 // in-memory last-good cache (persists across warm invocations) so a transient
 // GDELT rate-limit doesn't blank the feed
 let LASTGOOD = { news:[], ts:0 };
 
 module.exports = async (req,res)=>{
   res.setHeader('Access-Control-Allow-Origin','*');
-  let news=[], quakes=[];
-  try{ [news,quakes]=await Promise.all([getNews(),getQuakes()]); }catch(e){}
+  let news=[], quakes=[], nature=[], space=[];
+  try{ [news,quakes,nature,space]=await Promise.all([getNews(),getQuakes(),getEonet(),getLaunches()]); }catch(e){}
   let cached=false;
   if(news.length){ LASTGOOD={ news, ts:Date.now() }; }
   else if(LASTGOOD.news.length && Date.now()-LASTGOOD.ts < 25*60*1000){ news=LASTGOOD.news; cached=true; }
-  const events=[...news,...quakes].sort((a,b)=>b.time-a.time);
-  // cache good responses at the edge for a while; recover fast from empty ones
-  res.setHeader('Cache-Control', news.length ? 's-maxage=180, stale-while-revalidate=600' : 's-maxage=8');
-  res.status(200).json({ updated:Date.now(), counts:{news:news.length,quakes:quakes.length,cached}, events });
+  const events=[...news,...nature,...space,...quakes].sort((a,b)=>b.time-a.time);
+  // cache good responses at the edge for a while; recover fast from a fully-empty one
+  res.setHeader('Cache-Control', (news.length||nature.length) ? 's-maxage=180, stale-while-revalidate=600' : 's-maxage=8');
+  res.status(200).json({ updated:Date.now(),
+    counts:{news:news.length,nature:nature.length,space:space.length,quakes:quakes.length,cached}, events });
 };
