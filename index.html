@@ -58,21 +58,43 @@
     display:flex; justify-content:space-between; gap:8px; }
   .card .meta .pl{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:62%; }
 
-  #popup{ position:absolute; left:0; bottom:0; width:calc(400px*var(--scale)); max-width:46vw; pointer-events:auto;
-    background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px; backdrop-filter:blur(10px);
-    opacity:0; transform:translateY(14px); transition:opacity .35s, transform .35s; box-shadow:0 14px 50px rgba(0,0,0,.5); }
-  #popup.show{ opacity:1; transform:none; }
-  #popup .row{ display:flex; align-items:center; gap:10px; }
-  #popup .tag{ font-family:"JetBrains Mono",monospace; font-size:calc(10px*var(--scale)); letter-spacing:.2em; font-weight:700;
-    text-transform:uppercase; padding:3px 9px; border-radius:20px; border:1px solid currentColor; }
-  #popup .when{ font-family:"JetBrains Mono",monospace; font-size:calc(11px*var(--scale)); color:var(--dim); margin-left:auto; }
-  #popup h2{ font-size:calc(19px*var(--scale)); font-weight:600; line-height:1.25; margin:11px 0 9px; }
-  #popup .loc{ font-family:"JetBrains Mono",monospace; font-size:calc(12px*var(--scale)); color:var(--cyan); display:flex; align-items:center; gap:8px; }
-  #popup .loc svg{ width:13px; height:13px; }
-  #popup .coords{ font-family:"JetBrains Mono",monospace; font-size:calc(11px*var(--scale)); color:var(--dim); margin-top:3px; }
-  #popup .ok{ display:inline-flex; align-items:center; gap:9px; margin-top:14px; font-family:"JetBrains Mono",monospace;
-    font-size:calc(12px*var(--scale)); letter-spacing:.06em; color:var(--bg); background:var(--cyan); padding:9px 15px; border-radius:8px; font-weight:700; }
-  #popup .ok b{ background:rgba(0,0,0,.25); border-radius:4px; padding:1px 7px; }
+  /* left detail panel — image + blurb + nearby coverage */
+  #detail{ position:absolute; left:0; top:calc(86px*var(--scale)); bottom:calc(40px*var(--scale));
+    width:calc(420px*var(--scale)); max-width:42vw; pointer-events:auto; display:flex; flex-direction:column;
+    background:var(--panel); border:1px solid var(--line); border-radius:16px; overflow:hidden; backdrop-filter:blur(12px);
+    opacity:0; transform:translateX(-16px); transition:opacity .4s, transform .4s; box-shadow:0 18px 60px rgba(0,0,0,.55); }
+  #detail.show{ opacity:1; transform:none; }
+  .dhero{ position:relative; height:calc(190px*var(--scale)); flex:none; background:#0b121e; overflow:hidden; }
+  .dhero img{ width:100%; height:100%; object-fit:cover; display:block; opacity:0; transition:opacity .5s; }
+  .dhero img.on{ opacity:1; }
+  .dgrad{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(5,7,13,.1) 30%, rgba(10,16,28,.95)); }
+  .dtagrow{ position:absolute; left:16px; right:16px; bottom:12px; display:flex; align-items:center; gap:10px; }
+  .dtag{ font-family:"JetBrains Mono",monospace; font-size:calc(10px*var(--scale)); letter-spacing:.2em; font-weight:700;
+    text-transform:uppercase; padding:4px 10px; border-radius:20px; border:1px solid currentColor; background:rgba(5,7,13,.5); }
+  .dwhen{ font-family:"JetBrains Mono",monospace; font-size:calc(11px*var(--scale)); color:var(--dim); margin-left:auto; }
+  .dscroll{ flex:1; overflow:hidden; padding:16px 18px 8px; }
+  #detail h2{ font-size:calc(20px*var(--scale)); font-weight:600; line-height:1.25; margin-bottom:10px; }
+  .dmeta{ display:flex; flex-direction:column; gap:3px; margin-bottom:12px; font-family:"JetBrains Mono",monospace; }
+  .dmeta .dloc{ font-size:calc(12.5px*var(--scale)); color:var(--cyan); }
+  .dmeta .dsub{ font-size:calc(11px*var(--scale)); color:var(--dim); }
+  .dblurb{ font-size:calc(13.5px*var(--scale)); line-height:1.55; color:#cdd9ea; }
+  .dblurb p{ margin-bottom:9px; }
+  .dblurb .skel{ height:11px; background:linear-gradient(90deg,rgba(120,170,210,.10),rgba(120,170,210,.20),rgba(120,170,210,.10));
+    background-size:200% 100%; border-radius:4px; margin-bottom:9px; animation:shim 1.4s infinite; }
+  @keyframes shim{ 0%{ background-position:200% 0;} 100%{ background-position:-200% 0;} }
+  .drelhead{ font-family:"JetBrains Mono",monospace; font-size:calc(10px*var(--scale)); letter-spacing:.24em; color:var(--dim);
+    text-transform:uppercase; margin:14px 0 8px; }
+  .drelated{ display:flex; flex-direction:column; gap:7px; }
+  .drel{ display:flex; gap:9px; align-items:center; cursor:pointer; border-radius:8px; padding:5px; transition:background .15s; }
+  .drel:hover{ background:rgba(120,170,210,.1); }
+  .drel img{ width:46px; height:36px; object-fit:cover; border-radius:5px; flex:none; background:#0b121e; }
+  .drel .rt{ font-size:calc(11.5px*var(--scale)); line-height:1.25; color:#bcccde;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .dfoot{ flex:none; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 18px;
+    border-top:1px solid var(--line); background:rgba(5,7,13,.4); }
+  .dok{ font-family:"JetBrains Mono",monospace; font-size:calc(12px*var(--scale)); color:var(--ink); }
+  .dok b{ background:var(--cyan); color:var(--bg); border-radius:5px; padding:2px 9px; font-weight:700; margin-right:6px; }
+  .dqr{ width:calc(52px*var(--scale)); height:calc(52px*var(--scale)); border-radius:6px; background:#fff; padding:3px; }
 
   /* on-globe markers */
   .marker{ position:relative; width:12px; height:12px; transform:translate(-50%,-50%); pointer-events:auto; cursor:pointer; }
@@ -100,7 +122,7 @@
     border-radius:20px; padding:7px 16px; opacity:0; transition:opacity .3s; backdrop-filter:blur(8px); }
   #toast.show{ opacity:1; }
 
-  @media (max-width:680px){ #feed{ display:none; } #popup{ width:auto; left:0; right:0; max-width:none; } #readerSide{ display:none; } }
+  @media (max-width:680px){ #feed{ display:none; } #detail{ width:auto; left:0; right:0; max-width:none; top:auto; height:55%; } #readerSide{ display:none; } }
 </style>
 </head>
 <body>
@@ -123,12 +145,25 @@
     <div class="list" id="feedList"></div>
   </div>
 
-  <div id="popup">
-    <div class="row"><span class="tag" id="pTag">EVENT</span><span class="when" id="pWhen"></span></div>
-    <h2 id="pTitle">—</h2>
-    <div class="loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span id="pLoc"></span></div>
-    <div class="coords" id="pCoords"></div>
-    <div class="ok"><b>OK</b>&nbsp;read article</div>
+  <div id="detail">
+    <div class="dhero" id="dHero"><img id="dImg" alt=""><div class="dgrad"></div>
+      <div class="dtagrow"><span class="dtag" id="dTag">EVENT</span><span class="dwhen" id="dWhen"></span></div>
+    </div>
+    <div class="dscroll">
+      <h2 id="dTitle">—</h2>
+      <div class="dmeta">
+        <span class="dloc" id="dLoc"></span>
+        <span class="dsub" id="dCoords"></span>
+        <span class="dsub" id="dSrc"></span>
+      </div>
+      <div class="dblurb" id="dBlurb"></div>
+      <div class="drelhead" id="dRelHead" style="display:none">More coverage nearby</div>
+      <div class="drelated" id="dRelated"></div>
+    </div>
+    <div class="dfoot">
+      <span class="dok"><b>OK</b> read full article</span>
+      <img class="dqr" id="dQr" alt="">
+    </div>
   </div>
 
   <div id="toast"></div>
@@ -160,7 +195,7 @@ const CATS={
   Quake:{c:'#ffd23d', label:'Earthquake'}, Nature:{c:'#5ce0a0', label:'Natural event'},
   Space:{c:'#8aa6ff', label:'Spaceflight'},
 };
-const DWELL=17000;   // how long the camera holds on each location (ms)
+const DWELL=90000;   // hold ~1.5 min on each location
 const cat=e=>CATS[e&&e.category]||CATS.News;
 const $=id=>document.getElementById(id);
 
@@ -183,8 +218,8 @@ world.ringColor(()=> t=>{ const c=current?cat(current).c:'#5fe3ff'; return c+Mat
   .ringMaxRadius(5).ringPropagationSpeed(2.2).ringRepeatPeriod(900).ringsData([]);
 
 /* ---------------- state ---------------- */
-let events=[]; const seen=new Set(); let current=null, cur=-1, ptr=0;
-let paused=false, pauseT=null, resumeT=null, readerOpen=false;
+let events=[]; const seen=new Set(); let current=null, cur=-1; let playlist=[];
+let paused=false, pauseT=null, resumeT=null, readerOpen=false, detailSeq=0;
 
 /* ---------------- data ---------------- */
 async function getEvents(){
@@ -206,14 +241,14 @@ async function refresh(first){
   incoming.forEach(e=>seen.add(e.id));
   if(incoming.length){
     incoming.sort((a,b)=>b.time-a.time);
-    events=[...incoming,...events].slice(0,140);
-    renderMarkers(); renderFeed();
-    if(!first){ ptr=0; toast(incoming.length+' new event'+(incoming.length>1?'s':'')); }
+    events=[...incoming,...events].slice(0,160);
+    buildPlaylist(); renderMarkers(); renderFeed();
+    if(!first){ cur=-1; toast(incoming.length+' new event'+(incoming.length>1?'s':'')); }
   }
   $('liveTxt').textContent=events.length?'LIVE':'NO DATA';
   $('evCount').textContent=events.length;
   $('updClock').textContent=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-  if(first&&events.length){ focusIndex(0,false); }
+  if(first&&playlist.length){ cur=0; focus(playlist[0],false); }
 }
 
 /* ---------------- render ---------------- */
@@ -229,23 +264,82 @@ function renderFeed(){
     el.onclick=()=>focusId(ev.id,true); list.appendChild(el); });
 }
 
-/* ---------------- focus / cycle ---------------- */
-function focusIndex(i,manual){ if(!events.length)return; cur=(i+events.length)%events.length; const ev=events[cur]; current=ev;
+/* ---------------- playlist (interleave by type so it mixes it up) ---------------- */
+function buildPlaylist(){
+  const groups={}; for(const e of events.slice(0,140)){ (groups[e.category]=groups[e.category]||[]).push(e); }
+  for(const k in groups){ groups[k].sort((a,b)=>b.time-a.time); groups[k]=groups[k].slice(0,14); }  // cap per type so none dominates
+  const keys=Object.keys(groups), idx={}; keys.forEach(k=>idx[k]=0);
+  const out=[]; let last=null, guard=0, total=Object.values(groups).reduce((s,g)=>s+g.length,0);
+  while(out.length<total && guard++<3000){
+    let best=null, bestRem=-1;                         // pick a category != last with the most remaining
+    for(const k of keys){ if(k===last) continue; const rem=groups[k].length-idx[k]; if(rem>bestRem){ bestRem=rem; best=k; } }
+    if(!best || bestRem<=0){ for(const k of keys){ if(idx[k]<groups[k].length){ best=k; break; } } }
+    if(!best) break; out.push(groups[best][idx[best]++]); last=best;
+  }
+  playlist=out;
+}
+
+/* ---------------- focus + detail panel ---------------- */
+function focus(ev,manual){ if(!ev) return; current=ev;
+  const i=playlist.findIndex(e=>e&&e.id===ev.id); if(i>=0) cur=i;
   world.controls().autoRotate=false;
   world.pointOfView({lat:ev.lat,lng:ev.lng,altitude:0.78},1600);
   world.ringsData([ev]);
-  const c=cat(ev); $('popup').classList.add('show');
-  const tag=$('pTag'); tag.textContent=c.label.toUpperCase(); tag.style.color=c.c; $('pTag').style.borderColor=c.c;
-  $('pWhen').textContent=rel(ev.time)+' ago'; $('pTitle').textContent=ev.title; $('pLoc').textContent=ev.place;
-  $('pCoords').textContent=ev.lat.toFixed(2)+'°, '+ev.lng.toFixed(2)+'°';
-  $('popup').querySelector('.ok').style.background=c.c;
+  renderDetail(ev);
   renderFeed(); const card=document.querySelector('.card[data-id="'+CSS.escape(ev.id)+'"]'); if(card) card.scrollIntoView({block:'nearest'});
-  clearTimeout(resumeT);                 // hold on this location (no auto-rotate) until the next one
-  if(manual) pause();
+  clearTimeout(resumeT); if(manual) pause();
 }
-function focusId(id,manual){ const i=events.findIndex(e=>e.id===id); if(i>=0) focusIndex(i,manual); }
-function pause(){ paused=true; clearTimeout(pauseT); pauseT=setTimeout(()=>paused=false,35000); }
-function tick(){ if(paused||readerOpen||!events.length) return; focusIndex(ptr,false); ptr=(ptr+1)%Math.min(events.length,40); }
+function focusId(id,manual){ const ev=events.find(e=>e.id===id); if(ev) focus(ev,manual); }
+function pause(){ paused=true; clearTimeout(pauseT); pauseT=setTimeout(()=>paused=false,45000); }
+function tick(){ if(paused||readerOpen||!playlist.length) return; cur=(cur+1)%playlist.length; focus(playlist[cur],false); }
+
+function renderDetail(ev){
+  const c=cat(ev); $('detail').classList.add('show');
+  const tag=$('dTag'); tag.textContent=c.label.toUpperCase(); tag.style.color=c.c; tag.style.borderColor=c.c;
+  $('dWhen').textContent=rel(ev.time)+' ago';
+  $('dTitle').textContent=ev.title;
+  $('dLoc').textContent='◉ '+ev.place;
+  $('dCoords').textContent=ev.lat.toFixed(2)+'°, '+ev.lng.toFixed(2)+'°';
+  $('dSrc').textContent=(ev.source||'').toUpperCase();
+  const img=$('dImg'); img.classList.remove('on');
+  if(ev.image){ img.onload=()=>img.classList.add('on'); img.onerror=()=>{}; img.src=ev.image; } else { img.removeAttribute('src'); }
+  $('dQr').src='https://api.qrserver.com/v1/create-qr-code/?size=130x130&margin=0&data='+encodeURIComponent(ev.url||'');
+  $('dBlurb').innerHTML='<div class="skel" style="width:96%"></div><div class="skel" style="width:88%"></div><div class="skel" style="width:64%"></div>';
+  renderRelated(ev);
+  loadDetail(ev);
+}
+async function loadDetail(ev){
+  const seq=++detailSeq; let info=null;
+  if(ev.url && /^https?:/.test(ev.url) && (ev.type==='News')){
+    try{ const r=await fetch(API+'/api/article?url='+encodeURIComponent(ev.url)); if(r.ok) info=await r.json(); }catch(e){}
+  }
+  if(seq!==detailSeq) return;          // a newer focus superseded this
+  const paras=(info&&info.paragraphs&&info.paragraphs.length)? info.paragraphs : fallbackBlurb(ev);
+  $('dBlurb').innerHTML=paras.slice(0,3).map(p=>'<p>'+esc(p)+'</p>').join('');
+  if(!ev.image && info && info.images && info.images[0]){ const img=$('dImg'); img.onload=()=>img.classList.add('on'); img.src=info.images[0]; }
+}
+function fallbackBlurb(ev){
+  if(ev.category==='Quake') return ['A magnitude '+(ev.mag||'?')+' earthquake was recorded near '+ev.place+'.',
+    'Seismic data is provided live by the USGS. Press OK for the full event report — depth, intensity and any aftershocks.'];
+  if(ev.type==='Space') return [ev.title+' — a launch staged from '+ev.place+'.',
+    'Tracked via The Space Devs launch database. Press OK for mission details and live coverage.'];
+  if(ev.type==='Nature') return [ev.title+' is an active natural event ('+ev.place+'), tracked by NASA EONET.',
+    'Press OK for the latest source reports and satellite imagery.'];
+  if(ev.type==='Weather') return [ev.title+'.',
+    'An active severe-weather alert for '+ev.place+', issued by the US National Weather Service. Press OK for the full advisory.'];
+  return [ev.title+'.', 'Reported via '+(ev.source||'wire services')+' from '+ev.place+'. Press OK to open the full article in the reader.'];
+}
+function renderRelated(ev){
+  const near=events.filter(e=>e.id!==ev.id && Math.abs(e.lat-ev.lat)<6 && Math.abs(((e.lng-ev.lng+540)%360)-180)<8).slice(0,3);
+  const box=$('dRelated'), head=$('dRelHead');
+  if(!near.length){ box.innerHTML=''; head.style.display='none'; return; }
+  head.style.display='block';
+  box.innerHTML=near.map(e=>{ const cc=cat(e);
+    const im=e.image? '<img src="'+esc(e.image)+'">' : '<div style="width:46px;height:36px;border-radius:5px;flex:none;background:'+cc.c+'22"></div>';
+    return '<div class="drel" data-id="'+esc(e.id)+'">'+im+'<div class="rt" style="border-left:2px solid '+cc.c+';padding-left:7px">'+esc(e.title)+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.drel').forEach(el=>el.onclick=()=>focusId(el.dataset.id,true));
+}
 
 /* ---------------- in-app reader ---------------- */
 let _frame=null;
@@ -278,8 +372,8 @@ addEventListener('keydown',e=>{
     else if(k==='Escape'||k==='Backspace'||k==='GoBack'||k==='BrowserBack'){ e.preventDefault(); closeReader(); }
     return;
   }
-  if(k==='ArrowDown'||k==='ArrowRight'){ e.preventDefault(); focusIndex(cur+1,true); }
-  else if(k==='ArrowUp'||k==='ArrowLeft'){ e.preventDefault(); focusIndex(cur-1,true); }
+  if(k==='ArrowDown'||k==='ArrowRight'){ e.preventDefault(); if(playlist.length){ cur=(cur+1)%playlist.length; focus(playlist[cur],true); } }
+  else if(k==='ArrowUp'||k==='ArrowLeft'){ e.preventDefault(); if(playlist.length){ cur=(cur-1+playlist.length)%playlist.length; focus(playlist[cur],true); } }
   else if(k==='Enter'||k===' '){ e.preventDefault(); openReader(); }
   else if(k==='Escape'){ if(window.GPElectron&&window.GPElectron.quit) window.GPElectron.quit(); }  // exit screensaver (Windows)
   else if(k==='f'||k==='F'){ toggleFullscreen(); }
@@ -298,7 +392,7 @@ setInterval(tick, DWELL);         // hold on each location for DWELL ms, then mo
 setInterval(()=>refresh(false), 90000);  // poll for new events
 setInterval(renderFeed, 30000);   // keep relative times fresh
 
-window.__GP={ get events(){return events;}, focusIndex, openReader, closeReader };
+window.__GP={ get events(){return events;}, get playlist(){return playlist;}, buildPlaylist, focus, focusId, openReader, closeReader };
 })();
 </script>
 </body>

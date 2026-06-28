@@ -44,18 +44,45 @@ const CITY = {
 const CONFLICT=/strike|attack|kill|war\b|troops|missile|clash|militan|bomb|shell|offensive|conflict|invasion|gaza|hostage|drone|airstrike|ceasefire|gunmen|insurgen/i;
 const POLITICS=/election|vote|president|parliament|minister|senate|policy|sanction|summit|diplomat|coup|referendum|cabinet|congress|premier|chancellor|envoy/i;
 const DISASTER=/storm|flood|quake|earthquake|wildfire|fire\b|hurricane|cyclone|typhoon|drought|eruption|volcano|landslide|evacuat|tsunami|famine|outbreak/i;
+// US states + a few regions/provinces so regional stories don't dump on the country centroid
+const REGION = {
+  "alabama":[32.8,-86.8],"alaska":[64,-152],"arizona":[34.3,-111.7],"arkansas":[34.9,-92.4],
+  "california":[37.2,-119.3],"colorado":[39,-105.5],"connecticut":[41.6,-72.7],"delaware":[39,-75.5],
+  "florida":[28.6,-82.4],"hawaii":[20.3,-156.4],"idaho":[44.2,-114.5],"illinois":[40,-89],
+  "indiana":[39.9,-86.3],"iowa":[42,-93.5],"kansas":[38.5,-98],"kentucky":[37.5,-85],"louisiana":[31,-92],
+  "maine":[45.3,-69],"maryland":[39,-76.7],"massachusetts":[42.3,-71.8],"michigan":[44.3,-85.4],
+  "minnesota":[46.3,-94.3],"mississippi":[32.7,-89.7],"missouri":[38.4,-92.5],"montana":[47,-109.6],
+  "nebraska":[41.5,-99.8],"nevada":[39.3,-116.6],"new hampshire":[43.7,-71.6],"new jersey":[40.2,-74.7],
+  "new mexico":[34.4,-106.1],"north carolina":[35.6,-79.4],"north dakota":[47.5,-100.3],"ohio":[40.3,-82.8],
+  "oklahoma":[35.6,-97.5],"oregon":[44,-120.6],"pennsylvania":[41,-77.6],"rhode island":[41.7,-71.6],
+  "south carolina":[33.9,-80.9],"south dakota":[44.4,-100.2],"tennessee":[35.9,-86.4],"texas":[31.5,-99.3],
+  "utah":[39.3,-111.7],"vermont":[44,-72.7],"virginia":[37.5,-78.8],"west virginia":[38.6,-80.6],
+  "wisconsin":[44.6,-89.9],"wyoming":[43,-107.5],
+  "southwestern us":[34.5,-111],"southwest us":[34.5,-111],"midwest":[41.5,-93],"new england":[43.8,-71.5],
+  "siberia":[62,105],"kashmir":[34,76.5],"west bank":[32,35.3],"crimea":[45.3,34],"sahel":[15,5],
+  "amazon":[-4,-62],"balkans":[43,21],"scandinavia":[63,15],"patagonia":[-45,-70]
+};
 function categorize(t){ if(CONFLICT.test(t))return"Conflict"; if(DISASTER.test(t))return"Disaster"; if(POLITICS.test(t))return"Politics"; return"News"; }
 function hash(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return h; }
 function jitter(seed,amp){ const a=Math.abs(hash(seed)); return ((a%2000)/1000-1)*amp; }
+function has(lc,k){ return lc.includes(' '+k+' ')||lc.includes(' '+k+',')||lc.includes(' '+k+"'")||lc.includes(' '+k+'.')||lc.includes(' '+k+':'); }
 function placeOf(title,country){
-  const lc=' '+title.toLowerCase()+' ';
-  for(const k in CITY){ if(lc.includes(' '+k+' ')||lc.includes(' '+k+',')||lc.includes(' '+k+"'")) return {ll:CITY[k], name:cap(k)}; }
-  for(const k in COUNTRY){ if(lc.includes(' '+k+' ')||lc.includes(' '+k+',')) return {ll:COUNTRY[k], name:cap(k)}; }
+  const lc=' '+title.toLowerCase().replace(/[“”"()’]/g,' ')+' ';
+  for(const k in CITY){   if(has(lc,k)) return {ll:CITY[k],   name:cap(k)}; }   // most specific: city / hotspot
+  for(const k in REGION){ if(has(lc,k)) return {ll:REGION[k], name:cap(k)}; }   // then state / region
+  for(const k in COUNTRY){if(has(lc,k)) return {ll:COUNTRY[k], name:cap(k)}; }  // then country (in the headline)
   const c=(country||'').toLowerCase().trim();
-  if(COUNTRY[c]) return {ll:COUNTRY[c], name:country};
+  if(COUNTRY[c]) return {ll:COUNTRY[c], name:country};                          // fallback: source country
   return null;
 }
 function cap(s){ return s.replace(/\b\w/g,m=>m.toUpperCase()); }
+function decodeEntities(s){ if(!s) return '';
+  return String(s).replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"')
+    .replace(/&#0?39;|&apos;|&#x27;/g,"'").replace(/&nbsp;/g,' ').replace(/&hellip;/g,'…')
+    .replace(/&mdash;/g,'—').replace(/&ndash;/g,'–').replace(/&rsquo;/g,'’').replace(/&lsquo;/g,'‘')
+    .replace(/&ldquo;/g,'“').replace(/&rdquo;/g,'”')
+    .replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi,(_,n)=>String.fromCharCode(parseInt(n,16))); }
+function clean(frag){ return decodeEntities(String(frag||'').replace(/<[^>]+>/g,' ')).replace(/\s+/g,' ').trim(); }
 
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function getNews(){
@@ -76,11 +103,11 @@ async function getNews(){
     const seed=a.url;
     // small per-location stacking offset so same-place stories spread a little
     const key=p.ll.join(','); const n=(seenLoc[key]=(seenLoc[key]||0)+1);
-    const lat=clampLat(p.ll[0]+jitter(seed,2.2)+ (n>1?Math.sin(n)*1.5:0));
-    const lng=p.ll[1]+jitter(seed+'x',2.6)+ (n>1?Math.cos(n)*1.5:0);
+    const lat=clampLat(p.ll[0]+jitter(seed,0.5)+ (n>1?Math.sin(n)*0.8:0));
+    const lng=p.ll[1]+jitter(seed+'x',0.6)+ (n>1?Math.cos(n)*0.8:0);
     out.push({ id:'n:'+hash(a.url), type:'News', category:categorize(title),
       lat, lng, title, place:p.name, time:parseDate(a.seendate)||Date.now(),
-      url:a.url, source:a.domain||'' });
+      url:a.url, source:a.domain||'', image:a.socialimage||'' });
     if(out.length>=70) break;
   }
   return out;
@@ -142,20 +169,85 @@ async function getLaunches(){
   }catch(e){ return LAUNCHCACHE.data; }
 }
 
+// --- RSS news from major global outlets (geolocated by headline) ---
+const FEEDS=[
+  ['BBC','http://feeds.bbci.co.uk/news/world/rss.xml'],
+  ['The Guardian','https://www.theguardian.com/world/rss'],
+  ['Al Jazeera','https://www.aljazeera.com/xml/rss/all.xml'],
+  ['NPR','https://feeds.npr.org/1004/rss.xml'],
+  ['DW','https://rss.dw.com/rdf/rss-en-world'],
+  ['France 24','https://www.france24.com/en/rss'],
+];
+function tagOf(b,name){ const m=new RegExp('<'+name+'[^>]*>([\\s\\S]*?)<\\/'+name+'>','i').exec(b);
+  return m? m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1') : ''; }
+function rssItems(xml){
+  const out=[]; const blocks=xml.match(/<item[\s\S]*?<\/item>/gi)||xml.match(/<entry[\s\S]*?<\/entry>/gi)||[];
+  for(const b of blocks){
+    const title=clean(tagOf(b,'title'));
+    let link=clean(tagOf(b,'link')); if(!link){ const lm=/<link[^>]+href=["']([^"']+)["']/i.exec(b); if(lm) link=lm[1]; }
+    const desc=tagOf(b,'description')||tagOf(b,'summary')||tagOf(b,'content:encoded')||'';
+    let img=''; const mt=/<media:(?:thumbnail|content)[^>]+url=["']([^"']+)["']/i.exec(b)||/<enclosure[^>]+url=["']([^"']+)["']/i.exec(b);
+    if(mt) img=mt[1]; if(!img){ const di=/<img[^>]+src=["']([^"']+)["']/i.exec(desc); if(di) img=di[1]; }
+    const date=tagOf(b,'pubDate')||tagOf(b,'updated')||tagOf(b,'dc:date')||'';
+    out.push({ title, link, desc:clean(desc).slice(0,400), img, time:Date.parse(date)||Date.now() });
+  }
+  return out;
+}
+async function getRss(){
+  const lists=await Promise.all(FEEDS.map(async ([name,url])=>{
+    try{ const sig=AbortSignal.timeout?AbortSignal.timeout(6500):undefined;
+      const r=await fetch(url,{signal:sig,headers:{'User-Agent':'Mozilla/5.0 (compatible; GlobalPulse/1.0)'}});
+      const xml=await r.text();
+      return rssItems(xml).slice(0,16).map(it=>{ if(!it.link||!it.title) return null;
+        const p=placeOf(it.title+' '+it.desc,''); if(!p) return null; const seed=it.link;
+        return { id:'f:'+hash(it.link), type:'News', category:categorize(it.title+' '+it.desc),
+          lat:clampLat(p.ll[0]+jitter(seed,0.5)), lng:p.ll[1]+jitter(seed+'x',0.6),
+          title:it.title, place:p.name, time:it.time, url:it.link, source:name, image:it.img||'' };
+      }).filter(Boolean);
+    }catch(e){ return []; }
+  }));
+  return lists.flat();
+}
+// --- NOAA / National Weather Service severe alerts (US, geolocated) ---
+async function getWeather(){
+  try{
+    const sig=AbortSignal.timeout?AbortSignal.timeout(6500):undefined;
+    const r=await fetch('https://api.weather.gov/alerts/active?severity=Severe,Extreme&limit=60',
+      {signal:sig,headers:{'User-Agent':'GlobalPulse (contact@dsio.io)','Accept':'application/geo+json'}});
+    const j=await r.json();
+    return (j.features||[]).map(f=>{ const p=f.properties||{}, g=f.geometry; let lat,lng;
+      if(g&&g.coordinates){ if(g.type==='Polygon'){ const c=g.coordinates[0]; let sx=0,sy=0; c.forEach(pt=>{sx+=pt[0];sy+=pt[1];}); lng=sx/c.length; lat=sy/c.length; }
+        else if(g.type==='Point'){ lng=g.coordinates[0]; lat=g.coordinates[1]; } }
+      if(!Number.isFinite(lat)) return null;
+      return { id:'w:'+hash((p.id||p.headline||'')+''), type:'Weather', category:'Disaster', lat:clampLat(lat), lng,
+        title:p.headline||p.event||'Severe weather alert', place:(p.areaDesc||'United States').split(';')[0].trim(),
+        time:Date.parse(p.sent)||Date.now(), url:'https://www.weather.gov/alerts', source:'weather.gov', image:'' };
+    }).filter(Boolean).slice(0,18);
+  }catch(e){ return []; }
+}
+function dedupe(arr){ const su=new Set(), st=new Set(), out=[];
+  for(const e of arr){ const u=(e.url||'').split('?')[0].replace(/\/$/,'');
+    const tk=(e.title||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,44);
+    if(u&&su.has(u)) continue; if(tk&&st.has(tk)) continue; if(u)su.add(u); if(tk)st.add(tk); out.push(e); }
+  return out;
+}
+
 // in-memory last-good cache (persists across warm invocations) so a transient
 // GDELT rate-limit doesn't blank the feed
 let LASTGOOD = { news:[], ts:0 };
 
 module.exports = async (req,res)=>{
   res.setHeader('Access-Control-Allow-Origin','*');
-  let news=[], quakes=[], nature=[], space=[];
-  try{ [news,quakes,nature,space]=await Promise.all([getNews(),getQuakes(),getEonet(),getLaunches()]); }catch(e){}
+  let gdelt=[], quakes=[], nature=[], space=[], rss=[], weather=[];
+  try{ [gdelt,quakes,nature,space,rss,weather]=await Promise.all(
+    [getNews(),getQuakes(),getEonet(),getLaunches(),getRss(),getWeather()]); }catch(e){}
+  let news=dedupe([...rss, ...gdelt]);   // merge wire services + GDELT, RSS first (richer)
   let cached=false;
   if(news.length){ LASTGOOD={ news, ts:Date.now() }; }
   else if(LASTGOOD.news.length && Date.now()-LASTGOOD.ts < 25*60*1000){ news=LASTGOOD.news; cached=true; }
-  const events=[...news,...nature,...space,...quakes].sort((a,b)=>b.time-a.time);
-  // cache good responses at the edge for a while; recover fast from a fully-empty one
-  res.setHeader('Cache-Control', (news.length||nature.length) ? 's-maxage=180, stale-while-revalidate=600' : 's-maxage=8');
+  const events=[...news,...weather,...nature,...space,...quakes].sort((a,b)=>b.time-a.time);
+  res.setHeader('Cache-Control', news.length ? 's-maxage=180, stale-while-revalidate=600' : 's-maxage=8');
   res.status(200).json({ updated:Date.now(),
-    counts:{news:news.length,nature:nature.length,space:space.length,quakes:quakes.length,cached}, events });
+    counts:{news:news.length,rss:rss.length,gdelt:gdelt.length,weather:weather.length,nature:nature.length,space:space.length,quakes:quakes.length,cached}, events });
 };
+module.exports.getRss=getRss; module.exports.getWeather=getWeather; module.exports.placeOf=placeOf;
