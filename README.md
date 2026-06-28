@@ -1,23 +1,33 @@
 # 🌍 Global Pulse — Live World Events
 
-A rotating 3D globe that monitors world events in realtime. When something happens the
-camera flies to the location, zooms in, drops a pulsing marker, and shows a popup card
-with a link to read more. A live feed lists recent events; click any to revisit it.
+A rotating globe that tracks **realtime world news and events**. The camera flies to each
+event's location, zooms in, drops a pulsing marker, and shows a card. Press **OK** on an
+event to open the article in an in-app browser (scroll with ↑/↓); **Back** returns to the
+globe. Runs as an ambient **screensaver** across platforms from one shared web core.
 
-## Run
-Just open `index.html` in a browser. No build, no keys.
+**Live:** https://global-pulse-two.vercel.app  ·  **API:** https://global-pulse-two.vercel.app/api/events
 
-## How it works
-- **Globe:** `globe.gl` (three.js + NASA Blue Marble imagery), auto-rotating, with
-  `pointOfView()` fly-to + zoom and animated pulse rings.
-- **Realtime data:**
-  - **USGS** live earthquake feed (geolocated, with detail links) — always on, CORS-friendly.
-  - **GDELT** geolocated news headlines — best-effort via a public CORS proxy; the app still
-    works fully on the USGS feed if GDELT/proxy is unavailable.
-- Polls every 60s; brand-new events jump to the front of the "showcase" queue (fly + popup).
+## What's real right now
+- **Globe** — globe.gl / three.js (NASA Blue Marble), auto-rotating, fly-to + zoom, pulse rings, HTML markers.
+- **Realtime data** — a Vercel serverless aggregator (`api/events.js`) that, server-side (no CORS):
+  - pulls **GDELT** world news, **geolocates each headline** (scans ~200 countries / 50 hotspot cities so a story lands where it happens), and **categorizes** it (Conflict / Politics / Disaster / News);
+  - merges **USGS** live earthquakes; returns one cached JSON feed (~110 events, ~2 min refresh).
+- **Navigation** — D-pad / arrows move through events, **OK/Enter** opens the reader, **Back/Esc** returns. Live feed list + QR code to open any article on a phone.
 
-## Notes / next iterations
-- True **Google Earth** photoreal 3D needs a billed Google Maps API key (Photorealistic
-  3D Tiles via Cesium). Swapping the renderer is a drop-in next step.
-- A small backend/proxy would make the news feed (GDELT/NewsAPI) more robust than a public
-  CORS proxy, and unlock keyed sources.
+## Platforms (one core, four hosts)
+| Platform | Folder | How it runs | In-app reader |
+|---|---|---|---|
+| Web / Smart-TV browser | `index.html` | open the URL (`?tv=1.5` for TV scale) | iframe + QR |
+| Windows screensaver | `windows/` | Electron host -> `.scr` | real `<webview>` (scrolls) |
+| Fire TV | `firetv/` | Android leanback WebView app | native reader (D-pad scroll) |
+| Roku | `roku/` | native BrightScript SceneGraph screensaver | QR (Roku has no browser) |
+
+Windows & Fire TV reuse the hosted web app and add a true embedded browser for articles.
+Roku is native 2D (equirectangular world map + live markers + headline cards) since it can't
+run WebGL, and shows a QR on OK. See each folder's README for build/sideload steps.
+
+## Caveats / next steps
+- **Google Earth:** classic API discontinued; Google photoreal 3D needs a billed Maps key.
+  Current globe is a key-free WebGL earth; swapping to Google 3D tiles via Cesium is a clean step.
+- GDELT rate-limits 1 req/5s per IP -> handled by edge caching + retry.
+- Custom domain (e.g. globalpulse.dsio.io) needs one Cloudflare DNS record; using *.vercel.app for now.

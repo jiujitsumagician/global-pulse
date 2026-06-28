@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    NewsFetchTask
+    A SceneGraph Task node. Network I/O (roUrlTransfer) is only
+    legal off the render thread, so the actual fetch runs here.
+    Tries the live endpoint first, falls back to the bundled
+    pkg:/events_sample.json so the screensaver always has data.
+-->
+<component name="NewsFetchTask" extends="Task">
+    <interface>
+        <!-- Caller sets this; defaults to the Global Pulse API. -->
+        <field id="endpoint" type="string" value="https://global-pulse-two.vercel.app/api/events" />
+        <!-- Parsed array of event associative arrays (output). -->
+        <field id="events" type="array" />
+        <!-- "ok" | "error" - changes when a run finishes (output). -->
+        <field id="status" type="string" value="" />
+        <!-- "live" | "sample" - where the data came from (output). -->
+        <field id="source" type="string" value="" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/NewsFetchTask.brs" />
+</component>

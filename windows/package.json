@@ -1,0 +1,21 @@
+{
+  "name": "global-pulse-screensaver",
+  "version": "1.0.0",
+  "description": "Global Pulse — Windows screensaver (Electron host for the live world-events globe)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable",
+    "postbuild": "echo Rename dist/GlobalPulse.exe to GlobalPulse.scr and right-click > Install"
+  },
+  "devDependencies": {
+    "electron": "^31.3.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "io.dsio.globalpulse.screensaver",
+    "productName": "GlobalPulse",
+    "win": { "target": ["portable"] },
+    "portable": { "artifactName": "GlobalPulse.exe" }
+  }
+}

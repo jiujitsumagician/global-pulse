@@ -1,0 +1,41 @@
+# ============================================================
+# Global Pulse - Roku Screensaver channel manifest
+# ============================================================
+# A sideloaded SceneGraph channel becomes selectable as a
+# SCREENSAVER (Settings > Screensaver) when source/main.brs
+# exports a `Sub RunScreenSaver()` entry point. That entry
+# point is what registers it as a screensaver, NOT a manifest
+# key. (There is no real `screensaver_xml` manifest key for
+# SceneGraph screensavers; unknown keys are simply ignored by
+# the firmware.) `screensaver_title` below is the friendly
+# name shown in the screensaver picker.
+# ------------------------------------------------------------
+
+title=Global Pulse
+subtitle=Live World News Screensaver
+screensaver_title=Global Pulse
+
+major_version=1
+minor_version=0
+build_version=00001
+
+# Design/runtime resolution. fhd = 1920x1080 design surface.
+ui_resolutions=fhd
+
+# Splash color shown while the channel boots (dark space).
+splash_color=#05080F
+splash_min_time=0
+
+# ------------------------------------------------------------
+# Icons / splash images are BINARY assets that are not bundled
+# in this repo (a text-only build cannot emit PNG/JPG). A
+# sideloaded channel still installs and runs without them
+# (Roku substitutes a default icon). To ship a polished build,
+# drop the PNG/JPG files into roku/images/ and uncomment the
+# matching lines below. See roku/images/README.txt.
+# ------------------------------------------------------------
+# mm_icon_focus_hd=pkg:/images/icon_focus_hd.png
+# mm_icon_focus_fhd=pkg:/images/icon_focus_fhd.png
+# mm_icon_side_hd=pkg:/images/icon_side_hd.png
+# splash_screen_hd=pkg:/images/splash_hd.jpg
+# splash_screen_fhd=pkg:/images/splash_fhd.jpg

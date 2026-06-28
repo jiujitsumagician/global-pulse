@@ -1,0 +1,149 @@
+{
+  "updated": 1782604800000,
+  "events": [
+    {
+      "id": "evt-001",
+      "type": "News",
+      "category": "Conflict",
+      "lat": 50.4501,
+      "lng": 30.5234,
+      "title": "Ceasefire talks resume in Kyiv as front lines hold steady",
+      "place": "Kyiv, Ukraine",
+      "time": 1782602100000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-001",
+      "mag": null
+    },
+    {
+      "id": "evt-002",
+      "type": "News",
+      "category": "Politics",
+      "lat": 38.8951,
+      "lng": -77.0364,
+      "title": "Senate passes sweeping infrastructure and energy bill",
+      "place": "Washington, D.C., USA",
+      "time": 1782600300000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-002",
+      "mag": null
+    },
+    {
+      "id": "evt-003",
+      "type": "Quake",
+      "category": "Quake",
+      "lat": 35.6895,
+      "lng": 139.6917,
+      "title": "Strong offshore earthquake rattles Tokyo Bay region",
+      "place": "Tokyo, Japan",
+      "time": 1782598800000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-003",
+      "mag": 6.1
+    },
+    {
+      "id": "evt-004",
+      "type": "News",
+      "category": "Disaster",
+      "lat": -33.8688,
+      "lng": 151.2093,
+      "title": "Wildfires force evacuations across New South Wales coast",
+      "place": "Sydney, Australia",
+      "time": 1782596400000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-004",
+      "mag": null
+    },
+    {
+      "id": "evt-005",
+      "type": "News",
+      "category": "News",
+      "lat": 51.5074,
+      "lng": -0.1278,
+      "title": "Bank of England holds rates as inflation cools to target",
+      "place": "London, United Kingdom",
+      "time": 1782594600000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-005",
+      "mag": null
+    },
+    {
+      "id": "evt-006",
+      "type": "News",
+      "category": "Politics",
+      "lat": 48.8566,
+      "lng": 2.3522,
+      "title": "EU leaders reach landmark migration and asylum accord",
+      "place": "Paris, France",
+      "time": 1782592200000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-006",
+      "mag": null
+    },
+    {
+      "id": "evt-007",
+      "type": "Quake",
+      "category": "Quake",
+      "lat": -12.0464,
+      "lng": -77.0428,
+      "title": "Shallow quake strikes off the central Peruvian coast",
+      "place": "Lima, Peru",
+      "time": 1782590400000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-007",
+      "mag": 5.4
+    },
+    {
+      "id": "evt-008",
+      "type": "News",
+      "category": "Conflict",
+      "lat": 15.5007,
+      "lng": 32.5599,
+      "title": "Aid convoys reach Khartoum after weeks of blocked access",
+      "place": "Khartoum, Sudan",
+      "time": 1782588000000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-008",
+      "mag": null
+    },
+    {
+      "id": "evt-009",
+      "type": "News",
+      "category": "Disaster",
+      "lat": 19.4326,
+      "lng": -99.1332,
+      "title": "Tropical storm makes landfall, heavy flooding reported",
+      "place": "Mexico City, Mexico",
+      "time": 1782585600000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-009",
+      "mag": null
+    },
+    {
+      "id": "evt-010",
+      "type": "News",
+      "category": "News",
+      "lat": 1.3521,
+      "lng": 103.8198,
+      "title": "Asian markets rally on strong semiconductor export data",
+      "place": "Singapore",
+      "time": 1782583200000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-010",
+      "mag": null
+    },
+    {
+      "id": "evt-011",
+      "type": "News",
+      "category": "Politics",
+      "lat": -23.5505,
+      "lng": -46.6333,
+      "title": "Brazil unveils Amazon protection plan ahead of summit",
+      "place": "Sao Paulo, Brazil",
+      "time": 1782580800000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-011",
+      "mag": null
+    },
+    {
+      "id": "evt-012",
+      "type": "Quake",
+      "category": "Quake",
+      "lat": 37.7749,
+      "lng": -122.4194,
+      "title": "Moderate earthquake felt across the San Francisco Bay Area",
+      "place": "San Francisco, USA",
+      "time": 1782578400000,
+      "url": "https://global-pulse-two.vercel.app/e/evt-012",
+      "mag": 4.7
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Global Pulse — Live World Events",
+  "short_name": "Global Pulse",
+  "description": "A rotating globe that tracks realtime world news and events.",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#05070d",
+  "theme_color": "#05070d",
+  "categories": ["news", "education", "lifestyle"],
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
