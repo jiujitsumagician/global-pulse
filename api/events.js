@@ -102,14 +102,19 @@ async function getQuakes(){
   }catch(e){ return []; }
 }
 
+// in-memory last-good cache (persists across warm invocations) so a transient
+// GDELT rate-limit doesn't blank the feed
+let LASTGOOD = { news:[], ts:0 };
+
 module.exports = async (req,res)=>{
   res.setHeader('Access-Control-Allow-Origin','*');
-  res.setHeader('Cache-Control','s-maxage=120, stale-while-revalidate=300');
-  try{
-    const [news,quakes]=await Promise.all([getNews(),getQuakes()]);
-    const events=[...news,...quakes].sort((a,b)=>b.time-a.time);
-    res.status(200).json({ updated:Date.now(), counts:{news:news.length,quakes:quakes.length}, events });
-  }catch(e){
-    res.status(200).json({ updated:Date.now(), counts:{news:0,quakes:0}, events:[], error:String(e) });
-  }
+  let news=[], quakes=[];
+  try{ [news,quakes]=await Promise.all([getNews(),getQuakes()]); }catch(e){}
+  let cached=false;
+  if(news.length){ LASTGOOD={ news, ts:Date.now() }; }
+  else if(LASTGOOD.news.length && Date.now()-LASTGOOD.ts < 25*60*1000){ news=LASTGOOD.news; cached=true; }
+  const events=[...news,...quakes].sort((a,b)=>b.time-a.time);
+  // cache good responses at the edge for a while; recover fast from empty ones
+  res.setHeader('Cache-Control', news.length ? 's-maxage=180, stale-while-revalidate=600' : 's-maxage=8');
+  res.status(200).json({ updated:Date.now(), counts:{news:news.length,quakes:quakes.length,cached}, events });
 };
