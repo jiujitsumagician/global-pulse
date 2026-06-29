@@ -27,15 +27,12 @@ splash_color=#05080F
 splash_min_time=0
 
 # ------------------------------------------------------------
-# Icons / splash images are BINARY assets that are not bundled
-# in this repo (a text-only build cannot emit PNG/JPG). A
-# sideloaded channel still installs and runs without them
-# (Roku substitutes a default icon). To ship a polished build,
-# drop the PNG/JPG files into roku/images/ and uncomment the
-# matching lines below. See roku/images/README.txt.
+# Branded icon + splash assets (Global Pulse: glowing globe with
+# live event markers + wordmark). Generated at exact Roku
+# dimensions. See roku/images/README.txt.
 # ------------------------------------------------------------
-# mm_icon_focus_hd=pkg:/images/icon_focus_hd.png
-# mm_icon_focus_fhd=pkg:/images/icon_focus_fhd.png
-# mm_icon_side_hd=pkg:/images/icon_side_hd.png
-# splash_screen_hd=pkg:/images/splash_hd.jpg
-# splash_screen_fhd=pkg:/images/splash_fhd.jpg
+mm_icon_focus_hd=pkg:/images/icon_focus_hd.png
+mm_icon_focus_fhd=pkg:/images/icon_focus_fhd.png
+mm_icon_side_hd=pkg:/images/icon_side_hd.png
+splash_screen_hd=pkg:/images/splash_hd.jpg
+splash_screen_fhd=pkg:/images/splash_fhd.jpg
