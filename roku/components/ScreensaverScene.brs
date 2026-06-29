@@ -22,10 +22,11 @@ sub init()
     m.top.backgroundColor = "0x05080FFF"
 
     ' --- Equirectangular base map (NASA Blue Marble, public domain,
-    '     hotlinkable from Wikimedia). 2:1 image. See README for
-    '     alternates if this URL ever moves. ---
+    '     bundled in the package so it always loads — no runtime
+    '     network/hotlink dependency. 2048x1024, same texture the web
+    '     globe uses (three-globe earth-blue-marble). ---
     m.mapPoster = m.top.findNode("mapPoster")
-    m.mapPoster.uri = "https://upload.wikimedia.org/wikipedia/commons/c/cb/Blue_Marble_2002.png"
+    m.mapPoster.uri = "pkg:/images/world.jpg"
 
     ' Geometry used for lat/lng -> pixel mapping. Must match the
     ' mapPoster translation/size in the XML.
@@ -142,20 +143,13 @@ sub buildMarkers()
         marker = m.markersGroup.createChild("Group")
         marker.translation = xy
 
-        glow = marker.createChild("Rectangle")
-        glow.width = 22 : glow.height = 22
-        glow.translation = [-11, -11]
-        glow.color = col : glow.opacity = 0.18
-
-        mid = marker.createChild("Rectangle")
-        mid.width = 12 : mid.height = 12
-        mid.translation = [-6, -6]
-        mid.color = col : mid.opacity = 0.45
-
-        core = marker.createChild("Rectangle")
-        core.width = 6 : core.height = 6
-        core.translation = [-3, -3]
-        core.color = col : core.opacity = 0.95
+        ' Round glowing dot: a white radial-glow texture tinted to the
+        ' category color via blendColor (Rectangles can only be square).
+        dot = marker.createChild("Poster")
+        dot.uri = "pkg:/images/dot.png"
+        dot.width = 30 : dot.height = 30
+        dot.translation = [-15, -15]
+        dot.blendColor = col
     end for
 end sub
 
@@ -202,7 +196,7 @@ sub applyCurrentEvent()
     ' Move + pulse the highlight halo over this event.
     if m.index < m.positions.count()
         m.highlightGroup.translation = m.positions[m.index]
-        m.highlightHalo.color = col
+        m.highlightHalo.blendColor = col
         if m.pulseAnim.state <> "running" then m.pulseAnim.control = "start"
     end if
 end sub

@@ -28,12 +28,13 @@
             <Group id="markersGroup" />
 
             <Group id="highlightGroup" translation="[-500,-500]">
-                <Rectangle id="highlightHalo"
-                           width="70" height="70"
-                           translation="[-35,-35]"
-                           scaleRotateCenter="[35,35]"
-                           color="0x5fe3ffff"
-                           opacity="0.0" />
+                <Poster id="highlightHalo"
+                        uri="pkg:/images/dot.png"
+                        width="70" height="70"
+                        translation="[-35,-35]"
+                        scaleRotateCenter="[35,35]"
+                        blendColor="0x5fe3ffff"
+                        opacity="0.0" />
             </Group>
         </Group>
 
