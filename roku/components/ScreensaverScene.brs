@@ -91,6 +91,14 @@ sub init()
     m.index = -1
     m.overlayOpen = false
 
+    ' rotate-to-event-then-pause tour
+    m.spinning = false
+    m.tourOrder = []
+    m.tourPos = -1
+    m.spinStartL = 0.0
+    m.spinDelta = 0.0
+    m.spinTargetLon0 = 0.0
+
     ' Start the looping globe video.
     content = CreateObject("roSGNode", "ContentNode")
     content.url = "pkg:/video/globe_spin.mp4"
@@ -98,19 +106,17 @@ sub init()
     m.globeVideo.content = content
     m.globeVideo.loop = true
     m.globeVideo.enableUI = false
-    m.globeVideo.notificationInterval = 0.25
+    m.globeVideo.notificationInterval = 0.1
     m.globeVideo.observeField("position", "onVideoPosition")
     m.globeVideo.control = "play"
 
     ' Observers / timers.
-    m.fadeOut.observeField("state", "onFadeOutDone")
     m.markerTick.observeField("fire", "onMarkerTick")
     m.cycleTimer.observeField("fire", "onCycle")
     m.refreshTimer.observeField("fire", "onRefresh")
 
     m.markerTick.control = "start"
-    m.cycleTimer.control = "start"
-    m.refreshTimer.control = "start"
+    m.refreshTimer.control = "start"   ' cycleTimer (dwell) starts on first arrival
     m.top.setFocus(true)
 
     startFetch()
@@ -128,14 +134,21 @@ sub onVideoPosition()
 end sub
 
 ' Driven at 30 Hz off a local clock (not the 10 Hz position polls) so marker
-' motion matches the smoothness of the hardware-decoded globe.
+' motion matches the smoothness of the hardware-decoded globe. While spinning,
+' the globe (video) is playing and markers advance; once we reach the featured
+' event the video is PAUSED and markers freeze, so the globe stops on the event.
 sub onMarkerTick()
     if not m.started then return
-    t = m.basePos + (m.clock.TotalMilliseconds() / 1000.0)
-    revs = t / m.secPerRev
-    frac = revs - Int(revs)
-    m.curLon0 = - frac * 360.0
-    reprojectMarkers()
+    if m.spinning
+        t = m.basePos + (m.clock.TotalMilliseconds() / 1000.0)
+        frac = (t / m.secPerRev) - Int(t / m.secPerRev)
+        curL = frac * 360.0
+        m.curLon0 = - curL
+        reprojectMarkers()
+        if normalize360(curL - m.spinStartL) >= m.spinDelta then onArrive()
+    else
+        reprojectMarkers()        ' paused: curLon0 frozen, event stays centered
+    end if
 end sub
 
 ' Forward orthographic projection (matches the rendered video).
@@ -176,6 +189,19 @@ sub buildMarkers()
         dot.blendColor = categoryColor(e.category)
         m.markerNodes.push(dot)
     end for
+
+    ' tour order = events sorted by their centred-longitude key so the globe
+    ' sweeps in short hops, pausing at each event location in turn
+    ord = []
+    for i = 0 to m.events.count() - 1
+        ord.push({ i: i, key: normalize360(- asFloat(m.events[i].lng)) })
+    end for
+    ord.SortBy("key")
+    m.tourOrder = []
+    for each o in ord
+        m.tourOrder.push(o.i)
+    end for
+
     reprojectMarkers()
 end sub
 
@@ -228,29 +254,58 @@ sub onFetchDone()
     m.evCount.text = m.events.count().ToStr() + " EVENTS"
     buildMarkers()
 
-    if m.index < 0
-        m.index = -1
-        onCycle()
+    if m.tourPos < 0
+        startSpinToNext()         ' begin the tour at the first event
     end if
 end sub
 
 ' ------------------------------------------------------------
-' Event cycling + headline card
+' Event tour: rotate to each event location, then pause on it
 ' ------------------------------------------------------------
 sub onCycle()
-    if m.overlayOpen then return
-    if m.events = invalid or m.events.count() = 0 then return
-
-    m.index = (m.index + 1) mod m.events.count()
-    m.fadeOut.control = "start"   ' fade card out -> swap -> fade in
-    if m.pulseAnim.state <> "running" then m.pulseAnim.control = "start"
+    startSpinToNext()             ' dwell timer fired -> move to the next event
 end sub
 
-sub onFadeOutDone()
-    if m.fadeOut.state = "stopped"
-        applyCurrentEvent()
-        m.fadeIn.control = "start"
+sub startSpinToNext()
+    if m.events = invalid or m.events.count() = 0 then return
+    if m.tourOrder.count() = 0 then return
+    if m.overlayOpen
+        m.cycleTimer.control = "start"   ' defer while the QR overlay is open
+        return
     end if
+
+    m.tourPos = (m.tourPos + 1) mod m.tourOrder.count()
+    m.index = m.tourOrder[m.tourPos]
+    e = m.events[m.index]
+
+    m.fadeOut.control = "start"          ' hide the old card during the move
+    m.highlightHalo.blendColor = categoryColor(e.category)
+
+    targetL = normalize360(- asFloat(e.lng))
+    curL = normalize360(- m.curLon0)
+    m.spinStartL = curL
+    m.spinDelta = normalize360(targetL - curL)
+    m.spinTargetLon0 = - targetL
+
+    if m.spinDelta < 2.0
+        onArrive()                       ' already centred (same longitude)
+    else
+        m.spinning = true
+        m.globeVideo.control = "play"
+        m.basePos = m.globeVideo.position
+        m.clock.Mark()
+    end if
+end sub
+
+sub onArrive()
+    m.spinning = false
+    m.globeVideo.control = "pause"       ' stop the globe on the event location
+    m.curLon0 = m.spinTargetLon0
+    reprojectMarkers()
+    applyCurrentEvent()
+    m.fadeIn.control = "start"
+    if m.pulseAnim.state <> "running" then m.pulseAnim.control = "start"
+    m.cycleTimer.control = "start"       ' begin the dwell hold
 end sub
 
 sub applyCurrentEvent()
@@ -275,16 +330,16 @@ sub applyCurrentEvent()
     ' reflow the lower block beneath the variable-length headline so long
     ' titles aren't clipped and short ones don't leave a huge gap
     tLines = computeLines(title, 30)
-    baseY = 380 + tLines * 38 + 22
+    baseY = 326 + tLines * 46 + 34
     m.placeLabel.translation  = [36, baseY]
-    m.coordLabel.translation  = [36, baseY + 38]
-    m.sourceLabel.translation = [36, baseY + 68]
-    m.blurbLabel.translation  = [36, baseY + 112]
+    m.coordLabel.translation  = [36, baseY + 50]
+    m.sourceLabel.translation = [36, baseY + 92]
+    m.blurbLabel.translation  = [36, baseY + 146]
 
     ' size the panel + hint to hug the content (no dead space)
-    hintY = baseY + 112 + 150 + 16
+    hintY = baseY + 146 + 150 + 24
     m.hintLabel.translation = [36, hintY]
-    panelH = hintY + 42
+    panelH = hintY + 44
     m.panelBg.height = panelH
     m.accentBar.height = panelH
 
@@ -430,11 +485,17 @@ end function
 
 ' Rough line-count estimate for a wrapped Label (proportional font), used to
 ' reflow the panel. Slightly over-estimates so blocks don't collide.
+function normalize360(x as float) as float
+    y = x - Int(x / 360.0) * 360.0
+    if y < 0.0 then y = y + 360.0
+    return y
+end function
+
 function computeLines(s as dynamic, cpl as integer) as integer
     if s = invalid or Len(s) = 0 then return 1
     n = Int((Len(s) - 1) / cpl) + 1
     if n < 1 then n = 1
-    if n > 5 then n = 5
+    if n > 4 then n = 4
     return n
 end function
 

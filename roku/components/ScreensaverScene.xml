@@ -62,22 +62,22 @@
             <Rectangle id="accentBar" width="8" height="906" color="0x5fe3ffff" />
 
             <!-- hero image (with category-tinted placeholder when none) -->
-            <Rectangle id="heroPlaceholder" translation="[8,0]" width="696" height="296" color="0x12203322" />
-            <Label id="heroWatermark" translation="[8,116]" width="696" horizAlign="center"
+            <Rectangle id="heroPlaceholder" translation="[8,0]" width="696" height="240" color="0x12203322" />
+            <Label id="heroWatermark" translation="[8,96]" width="696" horizAlign="center"
                    font="font:LargeBoldSystemFont" color="0x5fe3ff44" text="" />
-            <Poster id="heroImg" translation="[8,0]" width="696" height="296"
+            <Poster id="heroImg" translation="[8,0]" width="696" height="240"
                     loadDisplayMode="scaleToFill" />
-            <Rectangle id="heroShade" translation="[8,248]" width="696" height="48" color="0x0a1018cc" />
+            <Rectangle id="heroShade" translation="[8,192]" width="696" height="48" color="0x0a1018cc" />
 
-            <Label id="categoryTag" translation="[36,332]"
+            <Label id="categoryTag" translation="[36,278]"
                    font="font:MediumBoldSystemFont" color="0x5fe3ffff" text="" />
-            <Label id="timeLabel" translation="[504,332]" width="164" horizAlign="right"
+            <Label id="timeLabel" translation="[504,278]" width="164" horizAlign="right"
                    font="font:MediumSystemFont" color="0x8aa0b4ff" text="" />
 
-            <!-- title height fits ~5 lines; place/coords/source/blurb are
-                 repositioned in code based on the actual headline length -->
-            <Label id="titleLabel" translation="[36,380]"
-                   width="632" height="188" wrap="true"
+            <!-- title fits ~4 lines; place/coords/source/blurb are repositioned
+                 in code (with generous spacing) based on the headline length -->
+            <Label id="titleLabel" translation="[36,326]"
+                   width="632" height="184" wrap="true"
                    font="font:LargeBoldSystemFont" color="0xffffffff" text="" />
 
             <Label id="placeLabel" translation="[36,588]" width="632"
@@ -170,7 +170,7 @@
 
         <!-- ===================== TIMERS ===================== -->
         <Timer id="markerTick"   repeat="true" duration="0.033" />
-        <Timer id="cycleTimer"   repeat="true" duration="27" />
+        <Timer id="cycleTimer"   repeat="false" duration="27" />
         <Timer id="refreshTimer" repeat="true" duration="300" />
 
     </children>
