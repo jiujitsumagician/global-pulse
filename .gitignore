@@ -3,3 +3,6 @@
 .vercel
 dist
 node_modules
+
+.tmp_video/
+.tmp_video2/

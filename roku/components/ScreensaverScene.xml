@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
-    ScreensaverScene  (3D-globe edition)
-    1920x1080 design surface; renders at the device UI resolution.
+    ScreensaverScene  (video-globe edition)
+    Smooth rotation comes from a hardware-decoded H.264 globe-spin loop
+    (Video node), NOT from swapping Poster textures. Live event markers are
+    projected onto the sphere in BrightScript and synced to Video.position;
+    they ride inside globeCamera so a future pan/zoom keeps them aligned.
 
-      globeStage ......... holds the globe + markers so they zoom together
-        globePoster ...... pre-rendered orthographic Earth frame (rotates by
-                           swapping uri through pkg:/images/globe/frame_NNN.jpg)
+      globeCamera ........ parent group (pan/zoom target for fly-to)
+        globeVideo ....... looping globe-spin video (the rotating Earth)
         markersGroup ..... one colored dot per event, projected onto the sphere
         highlightGroup ... pulsing halo over the active event
-      brand .............. top-left wordmark (GLOBAL PULSE)
-      statusGroup ........ top-right LIVE indicator + event count
-      cardGroup .......... bottom headline card (fades between events)
-      qrOverlay .......... full-screen panel shown on OK/Select
+      brand .............. top-left wordmark
+      statusGroup ........ top-right LIVE + count
+      cardGroup .......... bottom headline card (OUTSIDE globeCamera; no zoom)
+      qrOverlay .......... full-screen panel on OK/Select
 -->
 <component name="ScreensaverScene" extends="Scene">
     <script type="text/brightscript" uri="pkg:/components/ScreensaverScene.brs" />
 
     <children>
 
-        <!-- Globe + markers live together so a zoom keeps them aligned. -->
-        <Group id="globeStage" scaleRotateCenter="[960,489]">
-            <Poster id="globePoster"
-                    translation="[0,0]"
-                    width="1920" height="1080"
-                    loadDisplayMode="scaleToFill" />
+        <Group id="globeCamera" scaleRotateCenter="[960,489]">
+            <Video id="globeVideo"
+                   translation="[0,0]" width="1920" height="1080"
+                   enableUI="false" loop="true" mute="true"
+                   notificationInterval="0.25" />
 
             <Group id="markersGroup" />
 
@@ -62,19 +63,15 @@
 
             <Label id="categoryTag" translation="[44,26]"
                    font="font:MediumBoldSystemFont" color="0x5fe3ffff" text="" />
-
             <Label id="titleLabel" translation="[44,72]"
                    width="1620" height="100" wrap="true"
                    font="font:LargeBoldSystemFont" color="0xffffffff" text="" />
-
             <Label id="placeLabel" translation="[44,186]"
                    width="1100"
                    font="font:MediumSystemFont" color="0xb9c6d6ff" text="" />
-
             <Label id="timeLabel" translation="[1340,186]"
                    width="344" horizAlign="right"
                    font="font:MediumSystemFont" color="0x8aa0b4ff" text="" />
-
             <Label id="hintLabel" translation="[44,150]"
                    width="1620"
                    font="font:SmallestSystemFont" color="0x6f8294ff"
@@ -128,18 +125,6 @@
                 keyValue="[0.7,0.0,0.7]" />
         </Animation>
 
-        <!-- Gentle zoom toward the active event on fly-to. -->
-        <Animation id="zoomIn" duration="1.6" easeFunction="outQuad">
-            <Vector2DFieldInterpolator
-                fieldToInterp="globeStage.scale"
-                key="[0.0,1.0]" keyValue="[[1.0,1.0],[1.08,1.08]]" />
-        </Animation>
-        <Animation id="zoomOut" duration="0.8" easeFunction="inOutQuad">
-            <Vector2DFieldInterpolator
-                fieldToInterp="globeStage.scale"
-                key="[0.0,1.0]" keyValue="[[1.08,1.08],[1.0,1.0]]" />
-        </Animation>
-
         <Animation id="fadeOut" duration="0.35" easeFunction="outQuad">
             <FloatFieldInterpolator
                 fieldToInterp="cardGroup.opacity"
@@ -166,8 +151,7 @@
         </Animation>
 
         <!-- ===================== TIMERS ===================== -->
-        <Timer id="spinTimer"    repeat="true" duration="0.5" />
-        <Timer id="flyTimer"     repeat="true" duration="0.045" />
+        <Timer id="markerTick"   repeat="true" duration="0.066" />
         <Timer id="cycleTimer"   repeat="true" duration="9" />
         <Timer id="refreshTimer" repeat="true" duration="300" />
 

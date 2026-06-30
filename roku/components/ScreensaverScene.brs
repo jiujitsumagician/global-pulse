@@ -1,16 +1,15 @@
 ' ============================================================
-' ScreensaverScene.brs  (3D-globe edition)
-' Rotates a pre-rendered orthographic Earth, projects live event
-' markers onto the sphere, "flies" to each event by spinning the
-' globe so the event sits front-and-centre, then shows a headline
-' card. OK opens a QR overlay for the current event.
+' ScreensaverScene.brs  (video-globe edition)
+' Smooth globe rotation = a hardware-decoded H.264 loop on a Video
+' node. Live markers are projected onto the sphere and synced to
+' Video.position (no texture swapping). OK opens a QR overlay.
 '
-' The projection here MUST match tools/render_globe.py:
-'   gN frames, frame i centred on longitude  -i*(360/gN)
-'   camera tilt gLat0, globe radius gR at screen (gCX,gCY)
+' Projection MUST match tools/render_globe_video.py:
+'   render frame i centred on longitude -i*(360/N); the video plays
+'   those frames, so at stream time t the centred longitude is
+'   -(frac(t/secPerRev))*360, camera tilt gLat0.
 ' ============================================================
 
-' ---- Category -> marker/accent color (0xRRGGBBAA) ----------
 function categoryColor(cat as dynamic) as string
     c = ""
     if cat <> invalid then c = LCase(cat)
@@ -25,29 +24,24 @@ function categoryColor(cat as dynamic) as string
 end function
 
 sub init()
+    ' Transparent scene background so the hardware video plane (the globe)
+    ' is never occluded by the graphics plane.
     m.top.backgroundURI = ""
-    m.top.backgroundColor = "0x04060CFF"
+    m.top.backgroundColor = "0x00000000"
 
-    ' --- globe geometry: keep in sync with tools/render_globe.py ---
-    ' 1080-space: globe frames are 1280x720, stretched 1.5x to fill the
-    ' 1920x1080 design surface (both 16:9, so no distortion).
-    m.gN    = 72
+    ' globe geometry (1080-space): video is 1920x1080; the source render
+    ' is 1280x720 with centre (640,326) R=332 tilt 16 -> x1.5 here.
     m.gR    = 498.0
     m.gCX   = 960.0
     m.gCY   = 489.0
     m.gLat0 = 16.0
-    m.PI    = 3.1415926535
-    m.D2R   = m.PI / 180.0
+    m.D2R   = 3.1415926535 / 180.0
+    m.secPerRev = 24.0       ' seconds per full revolution in the video loop
+    m.curLon0 = 0.0
 
-    ' Pre-rendered rotation frames.
-    m.frames = []
-    for i = 0 to m.gN - 1
-        m.frames.push("pkg:/images/globe/frame_" + pad3(i) + ".jpg")
-    end for
-
-    ' Node handles.
-    m.globeStage   = m.top.findNode("globeStage")
-    m.globePoster  = m.top.findNode("globePoster")
+    ' Nodes.
+    m.globeCamera = m.top.findNode("globeCamera")
+    m.globeVideo  = m.top.findNode("globeVideo")
     m.markersGroup = m.top.findNode("markersGroup")
     m.highlightGroup = m.top.findNode("highlightGroup")
     m.highlightHalo  = m.top.findNode("highlightHalo")
@@ -70,37 +64,40 @@ sub init()
     m.qrTime     = m.top.findNode("qrTime")
 
     m.pulseAnim = m.top.findNode("pulseAnim")
-    m.zoomIn    = m.top.findNode("zoomIn")
-    m.zoomOut   = m.top.findNode("zoomOut")
     m.fadeOut   = m.top.findNode("fadeOut")
     m.fadeIn    = m.top.findNode("fadeIn")
     m.qrFadeIn  = m.top.findNode("qrFadeIn")
     m.qrFadeOut = m.top.findNode("qrFadeOut")
 
-    m.spinTimer    = m.top.findNode("spinTimer")
-    m.flyTimer     = m.top.findNode("flyTimer")
+    m.markerTick   = m.top.findNode("markerTick")
     m.cycleTimer   = m.top.findNode("cycleTimer")
     m.refreshTimer = m.top.findNode("refreshTimer")
 
     ' State.
     m.events = []
     m.markerNodes = []
-    m.frame = 0
-    m.flyTarget = 0
-    m.flying = false
-    m.zoomed = false
+    m.lastPos = invalid
     m.index = -1
     m.overlayOpen = false
 
-    ' Observers.
+    ' Start the looping globe video.
+    content = CreateObject("roSGNode", "ContentNode")
+    content.url = "pkg:/video/globe_spin.mp4"
+    content.streamFormat = "mp4"
+    m.globeVideo.content = content
+    m.globeVideo.loop = true
+    m.globeVideo.enableUI = false
+    m.globeVideo.notificationInterval = 0.25
+    m.globeVideo.observeField("position", "onVideoPosition")
+    m.globeVideo.control = "play"
+
+    ' Observers / timers.
     m.fadeOut.observeField("state", "onFadeOutDone")
-    m.spinTimer.observeField("fire", "onSpin")
-    m.flyTimer.observeField("fire", "onFlyStep")
+    m.markerTick.observeField("fire", "onMarkerTick")
     m.cycleTimer.observeField("fire", "onCycle")
     m.refreshTimer.observeField("fire", "onRefresh")
 
-    showFrame()
-    m.spinTimer.control = "start"
+    m.markerTick.control = "start"
     m.cycleTimer.control = "start"
     m.refreshTimer.control = "start"
     m.top.setFocus(true)
@@ -109,44 +106,24 @@ sub init()
 end sub
 
 ' ------------------------------------------------------------
-' Globe rotation
+' Rotation phase from the video clock
 ' ------------------------------------------------------------
-sub showFrame()
-    m.globePoster.uri = m.frames[m.frame]
+sub onVideoPosition()
+    m.lastPos = m.globeVideo.position
+end sub
+
+sub onMarkerTick()
+    if m.lastPos = invalid then return
+    revs = m.lastPos / m.secPerRev
+    frac = revs - Int(revs)
+    m.curLon0 = - frac * 360.0
     reprojectMarkers()
 end sub
 
-sub onSpin()
-    if m.flying or m.overlayOpen then return
-    m.frame = (m.frame + 1) mod m.gN          ' idle: drift eastward
-    showFrame()
-end sub
-
-' Spin step-by-step toward the target frame during a fly-to.
-sub onFlyStep()
-    if m.frame = m.flyTarget
-        m.flyTimer.control = "stop"
-        m.flying = false
-        landOnEvent()
-        return
-    end if
-    ' shortest direction around the 360 ring
-    diff = ((m.flyTarget - m.frame + m.gN) mod m.gN)
-    if diff <= m.gN / 2
-        m.frame = (m.frame + 1) mod m.gN
-    else
-        m.frame = (m.frame - 1 + m.gN) mod m.gN
-    end if
-    showFrame()
-end sub
-
-' ------------------------------------------------------------
-' Orthographic projection (forward) — matches render_globe.py.
-' Returns roAssociativeArray { x, y, front }.
-' ------------------------------------------------------------
+' Forward orthographic projection (matches the rendered video).
 function project(lat as float, lng as float) as object
     latr = lat * m.D2R
-    lon0 = (- m.frame * (360.0 / m.gN)) * m.D2R
+    lon0 = m.curLon0 * m.D2R
     lat0 = m.gLat0 * m.D2R
     dl   = (lng * m.D2R) - lon0
 
@@ -198,7 +175,6 @@ sub reprojectMarkers()
         end if
     end for
 
-    ' keep the active highlight glued to its event as the globe turns
     if m.index >= 0 and m.index < m.events.count()
         e = m.events[m.index]
         p = project(asFloat(e.lat), asFloat(e.lng))
@@ -241,34 +217,15 @@ sub onFetchDone()
 end sub
 
 ' ------------------------------------------------------------
-' Event cycling + fly-to
+' Event cycling + headline card
 ' ------------------------------------------------------------
 sub onCycle()
     if m.overlayOpen then return
     if m.events = invalid or m.events.count() = 0 then return
 
     m.index = (m.index + 1) mod m.events.count()
-    e = m.events[m.index]
-
-    ' frame whose centre longitude best matches this event's longitude
-    stepDeg = 360.0 / m.gN
-    f = Int((- asFloat(e.lng) / stepDeg) + 0.5)
-    f = ((f mod m.gN) + m.gN) mod m.gN
-    m.flyTarget = f
-
-    m.flying = true
-    if not m.zoomed
-        m.zoomIn.control = "start"
-        m.zoomed = true
-    end if
-    m.flyTimer.control = "start"
-end sub
-
-' Called when the fly-to spin reaches the event.
-sub landOnEvent()
     m.fadeOut.control = "start"   ' fade card out -> swap -> fade in
     if m.pulseAnim.state <> "running" then m.pulseAnim.control = "start"
-    reprojectMarkers()
 end sub
 
 sub onFadeOutDone()
@@ -357,13 +314,6 @@ end sub
 ' ------------------------------------------------------------
 ' Helpers
 ' ------------------------------------------------------------
-function pad3(i as integer) as string
-    s = i.ToStr()
-    if Len(s) = 1 then return "00" + s
-    if Len(s) = 2 then return "0" + s
-    return s
-end function
-
 function asFloat(v as dynamic) as float
     if v = invalid then return 0.0
     return v
