@@ -49,12 +49,18 @@ sub init()
     m.liveTxt  = m.top.findNode("liveTxt")
     m.evCount  = m.top.findNode("evCount")
 
-    m.cardGroup   = m.top.findNode("cardGroup")
+    m.detailPanel = m.top.findNode("detailPanel")
     m.categoryTag = m.top.findNode("categoryTag")
     m.titleLabel  = m.top.findNode("titleLabel")
     m.placeLabel  = m.top.findNode("placeLabel")
+    m.coordLabel  = m.top.findNode("coordLabel")
+    m.sourceLabel = m.top.findNode("sourceLabel")
+    m.blurbLabel  = m.top.findNode("blurbLabel")
     m.timeLabel   = m.top.findNode("timeLabel")
     m.accentBar   = m.top.findNode("accentBar")
+    m.heroImg     = m.top.findNode("heroImg")
+    m.heroPlaceholder = m.top.findNode("heroPlaceholder")
+    m.heroWatermark   = m.top.findNode("heroWatermark")
 
     m.qrOverlay  = m.top.findNode("qrOverlay")
     m.qrPoster   = m.top.findNode("qrPoster")
@@ -76,7 +82,10 @@ sub init()
     ' State.
     m.events = []
     m.markerNodes = []
-    m.lastPos = invalid
+    m.started = false
+    m.basePos = 0.0
+    m.clock = CreateObject("roTimespan")
+    m.clock.Mark()
     m.index = -1
     m.overlayOpen = false
 
@@ -108,13 +117,20 @@ end sub
 ' ------------------------------------------------------------
 ' Rotation phase from the video clock
 ' ------------------------------------------------------------
+' Resync the smooth local clock to the (sparsely reported) video position so
+' markers stay aligned to the actual rotation without drifting.
 sub onVideoPosition()
-    m.lastPos = m.globeVideo.position
+    m.basePos = m.globeVideo.position
+    m.clock.Mark()
+    m.started = true
 end sub
 
+' Driven at 30 Hz off a local clock (not the 10 Hz position polls) so marker
+' motion matches the smoothness of the hardware-decoded globe.
 sub onMarkerTick()
-    if m.lastPos = invalid then return
-    revs = m.lastPos / m.secPerRev
+    if not m.started then return
+    t = m.basePos + (m.clock.TotalMilliseconds() / 1000.0)
+    revs = t / m.secPerRev
     frac = revs - Int(revs)
     m.curLon0 = - frac * 360.0
     reprojectMarkers()
@@ -253,9 +269,69 @@ sub applyCurrentEvent()
         title = "M" + formatMag(e.mag) + " earthquake near " + nz(e.place, "")
     end if
     m.titleLabel.text = title
-    m.placeLabel.text = nz(e.place, "")
+    m.placeLabel.text = "◉ " + nz(e.place, "")
     m.timeLabel.text = relativeTime(e.time)
+    m.coordLabel.text = formatCoord(e.lat, e.lng)
+    src = nz(e.source, "")
+    if src <> "" then src = UCase(src)
+    m.sourceLabel.text = src
+
+    ' hero image — use the event's own image immediately if it has one;
+    ' otherwise a category-tinted placeholder + watermark fills the space.
+    m.heroWatermark.text = tag
+    m.heroWatermark.color = Left(col, 8) + "55"
+    m.heroPlaceholder.color = Left(col, 8) + "1f"
+    img = nz(e.image, "")
+    m.curImage = img
+    m.heroImg.uri = img
+
+    ' blurb — synthesized fallback now, upgraded by the fetched article text
+    m.blurbLabel.text = fallbackBlurb(e)
+    fetchArticle(e)
 end sub
+
+' ------------------------------------------------------------
+' Article blurb + image (mirrors the PC detail panel)
+' ------------------------------------------------------------
+sub fetchArticle(e as object)
+    u = nz(e.url, "")
+    isNews = (e.type <> invalid and LCase(e.type) = "news")
+    if not isNews or Left(LCase(u), 4) <> "http" then return
+    if m.articleTask = invalid
+        m.articleTask = CreateObject("roSGNode", "ArticleFetchTask")
+        m.articleTask.observeField("done", "onArticleDone")
+    end if
+    m.articleTask.url = u
+    m.articleTask.control = "RUN"
+end sub
+
+sub onArticleDone()
+    if m.index < 0 or m.index >= m.events.count() then return
+    e = m.events[m.index]
+    if nz(e.url, "") <> m.articleTask.url then return    ' a newer event superseded this
+    b = m.articleTask.blurb
+    if b <> invalid and b <> "" then m.blurbLabel.text = b
+    if m.curImage = invalid or m.curImage = ""
+        im = m.articleTask.image
+        if im <> invalid and im <> "" then m.heroImg.uri = im
+    end if
+end sub
+
+function fallbackBlurb(e as object) as string
+    t = ""
+    if e.type <> invalid then t = LCase(e.type)
+    place = nz(e.place, "the region")
+    if t = "quake"
+        return "A magnitude " + formatMag(e.mag) + " earthquake was recorded near " + place + ". Live seismic data from the USGS — press OK for the full event report."
+    else if t = "space"
+        return nz(e.title, "A rocket launch") + " — staged from " + place + ". Tracked via The Space Devs launch database. Press OK for mission details."
+    else if t = "nature"
+        return nz(e.title, "An active natural event") + " (" + place + "), tracked by NASA EONET. Press OK for the latest source reports."
+    else if t = "weather"
+        return "An active severe-weather alert for " + place + ", issued by the US National Weather Service."
+    end if
+    return "Reported via " + nz(e.source, "wire services") + " from " + place + ". Press OK to open the full article on your phone."
+end function
 
 ' ------------------------------------------------------------
 ' QR overlay
@@ -331,6 +407,25 @@ function formatMag(mg as dynamic) as string
     whole = Int(n / 10)
     frac = n - whole * 10
     return whole.ToStr() + "." + frac.ToStr()
+end function
+
+function formatCoord(lat as dynamic, lng as dynamic) as string
+    return fmtDeg(lat) + ", " + fmtDeg(lng)
+end function
+
+function fmtDeg(v as dynamic) as string
+    if v = invalid then return "?"
+    x = v
+    neg = (x < 0)
+    if neg then x = -x
+    n = Int(x * 100.0 + 0.5)
+    whole = Int(n / 100)
+    frac = n - whole * 100
+    fs = frac.ToStr()
+    if Len(fs) = 1 then fs = "0" + fs
+    s = whole.ToStr() + "." + fs + "°"
+    if neg then s = "-" + s
+    return s
 end function
 
 function relativeTime(ms as dynamic) as string

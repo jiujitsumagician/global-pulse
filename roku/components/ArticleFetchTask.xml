@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    ArticleFetchTask
+    Fetches /api/article?url=... off the render thread and returns a short
+    blurb (paragraphs) + images for the active event, mirroring the PC
+    detail panel. Best-effort: empty result on any failure.
+-->
+<component name="ArticleFetchTask" extends="Task">
+    <interface>
+        <field id="url" type="string" value="" />
+        <field id="blurb" type="string" />        <!-- joined paragraphs (output) -->
+        <field id="image" type="string" value="" /><!-- first usable image (output) -->
+        <field id="done" type="int" value="0" />   <!-- bumped when a run finishes -->
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/ArticleFetchTask.brs" />
+</component>

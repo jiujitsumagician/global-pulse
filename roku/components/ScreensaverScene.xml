@@ -24,7 +24,7 @@
             <Video id="globeVideo"
                    translation="[0,0]" width="1920" height="1080"
                    enableUI="false" loop="true" mute="true"
-                   notificationInterval="0.25" />
+                   notificationInterval="0.1" />
 
             <Group id="markersGroup" />
 
@@ -56,26 +56,42 @@
                    color="0x8aa2bfff" font="font:SmallSystemFont" />
         </Group>
 
-        <!-- ===================== HEADLINE CARD ===================== -->
-        <Group id="cardGroup" translation="[96,786]" opacity="0.0">
-            <Rectangle id="cardBg" width="1728" height="240" color="0x0a1018ee" />
-            <Rectangle id="accentBar" width="10" height="240" color="0x5fe3ffff" />
+        <!-- ===================== DETAIL PANEL (left, PC-style) ============ -->
+        <Group id="detailPanel" translation="[56,150]" opacity="0.0">
+            <Rectangle id="panelBg" width="604" height="744" color="0x0a1018f2" />
+            <Rectangle id="accentBar" width="8" height="744" color="0x5fe3ffff" />
 
-            <Label id="categoryTag" translation="[44,26]"
+            <!-- hero image (with category-tinted placeholder when none) -->
+            <Rectangle id="heroPlaceholder" translation="[8,0]" width="596" height="300" color="0x12203322" />
+            <Label id="heroWatermark" translation="[8,118]" width="596" horizAlign="center"
+                   font="font:LargeBoldSystemFont" color="0x5fe3ff44" text="" />
+            <Poster id="heroImg" translation="[8,0]" width="596" height="300"
+                    loadDisplayMode="scaleToFill" />
+            <Rectangle id="heroShade" translation="[8,250]" width="596" height="50" color="0x0a1018cc" />
+
+            <Label id="categoryTag" translation="[28,320]"
                    font="font:MediumBoldSystemFont" color="0x5fe3ffff" text="" />
-            <Label id="titleLabel" translation="[44,72]"
-                   width="1620" height="100" wrap="true"
-                   font="font:LargeBoldSystemFont" color="0xffffffff" text="" />
-            <Label id="placeLabel" translation="[44,186]"
-                   width="1100"
-                   font="font:MediumSystemFont" color="0xb9c6d6ff" text="" />
-            <Label id="timeLabel" translation="[1340,186]"
-                   width="344" horizAlign="right"
+            <Label id="timeLabel" translation="[404,320]" width="172" horizAlign="right"
                    font="font:MediumSystemFont" color="0x8aa0b4ff" text="" />
-            <Label id="hintLabel" translation="[44,150]"
-                   width="1620"
+
+            <Label id="titleLabel" translation="[28,356]"
+                   width="548" height="128" wrap="true"
+                   font="font:LargeBoldSystemFont" color="0xffffffff" text="" />
+
+            <Label id="placeLabel" translation="[28,496]" width="548"
+                   font="font:MediumBoldSystemFont" color="0x5fe3ffff" text="" />
+            <Label id="coordLabel" translation="[28,528]" width="548"
+                   font="font:SmallSystemFont" color="0x8aa0b4ff" text="" />
+            <Label id="sourceLabel" translation="[28,556]" width="548"
+                   font="font:SmallSystemFont" color="0x6f8294ff" text="" />
+
+            <Label id="blurbLabel" translation="[28,596]"
+                   width="548" height="118" wrap="true"
+                   font="font:MediumSystemFont" color="0xcdd9eaff" text="" />
+
+            <Label id="hintLabel" translation="[28,712]" width="548"
                    font="font:SmallestSystemFont" color="0x6f8294ff"
-                   text="Press OK for QR  ·  Back to return" />
+                   text="Press OK to scan QR · read full article on your phone" />
         </Group>
 
         <!-- ===================== QR OVERLAY ===================== -->
@@ -127,16 +143,16 @@
 
         <Animation id="fadeOut" duration="0.35" easeFunction="outQuad">
             <FloatFieldInterpolator
-                fieldToInterp="cardGroup.opacity"
+                fieldToInterp="detailPanel.opacity"
                 key="[0.0,1.0]" keyValue="[1.0,0.0]" />
         </Animation>
         <Animation id="fadeIn" duration="0.5" easeFunction="outQuad">
             <FloatFieldInterpolator
-                fieldToInterp="cardGroup.opacity"
+                fieldToInterp="detailPanel.opacity"
                 key="[0.0,1.0]" keyValue="[0.0,1.0]" />
             <Vector2DFieldInterpolator
-                fieldToInterp="cardGroup.translation"
-                key="[0.0,1.0]" keyValue="[[96,792],[96,786]]" />
+                fieldToInterp="detailPanel.translation"
+                key="[0.0,1.0]" keyValue="[[56,158],[56,150]]" />
         </Animation>
 
         <Animation id="qrFadeIn" duration="0.3" easeFunction="outQuad">
@@ -151,7 +167,7 @@
         </Animation>
 
         <!-- ===================== TIMERS ===================== -->
-        <Timer id="markerTick"   repeat="true" duration="0.066" />
+        <Timer id="markerTick"   repeat="true" duration="0.033" />
         <Timer id="cycleTimer"   repeat="true" duration="9" />
         <Timer id="refreshTimer" repeat="true" duration="300" />
 
