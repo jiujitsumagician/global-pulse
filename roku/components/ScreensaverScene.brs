@@ -36,7 +36,7 @@ sub init()
     m.gCY   = 489.0
     m.gLat0 = 16.0
     m.D2R   = 3.1415926535 / 180.0
-    m.secPerRev = 24.0       ' seconds per full revolution in the video loop
+    m.secPerRev = 31.3       ' seconds per full revolution in the video loop (720f @ 23fps)
     m.curLon0 = 0.0
 
     ' Nodes.
@@ -50,6 +50,8 @@ sub init()
     m.evCount  = m.top.findNode("evCount")
 
     m.detailPanel = m.top.findNode("detailPanel")
+    m.panelBg     = m.top.findNode("panelBg")
+    m.hintLabel   = m.top.findNode("hintLabel")
     m.categoryTag = m.top.findNode("categoryTag")
     m.titleLabel  = m.top.findNode("titleLabel")
     m.placeLabel  = m.top.findNode("placeLabel")
@@ -269,6 +271,23 @@ sub applyCurrentEvent()
         title = "M" + formatMag(e.mag) + " earthquake near " + nz(e.place, "")
     end if
     m.titleLabel.text = title
+
+    ' reflow the lower block beneath the variable-length headline so long
+    ' titles aren't clipped and short ones don't leave a huge gap
+    tLines = computeLines(title, 30)
+    baseY = 380 + tLines * 38 + 22
+    m.placeLabel.translation  = [36, baseY]
+    m.coordLabel.translation  = [36, baseY + 38]
+    m.sourceLabel.translation = [36, baseY + 68]
+    m.blurbLabel.translation  = [36, baseY + 112]
+
+    ' size the panel + hint to hug the content (no dead space)
+    hintY = baseY + 112 + 150 + 16
+    m.hintLabel.translation = [36, hintY]
+    panelH = hintY + 42
+    m.panelBg.height = panelH
+    m.accentBar.height = panelH
+
     m.placeLabel.text = "◉ " + nz(e.place, "")
     m.timeLabel.text = relativeTime(e.time)
     m.coordLabel.text = formatCoord(e.lat, e.lng)
@@ -407,6 +426,16 @@ function formatMag(mg as dynamic) as string
     whole = Int(n / 10)
     frac = n - whole * 10
     return whole.ToStr() + "." + frac.ToStr()
+end function
+
+' Rough line-count estimate for a wrapped Label (proportional font), used to
+' reflow the panel. Slightly over-estimates so blocks don't collide.
+function computeLines(s as dynamic, cpl as integer) as integer
+    if s = invalid or Len(s) = 0 then return 1
+    n = Int((Len(s) - 1) / cpl) + 1
+    if n < 1 then n = 1
+    if n > 5 then n = 5
+    return n
 end function
 
 function formatCoord(lat as dynamic, lng as dynamic) as string

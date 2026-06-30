@@ -57,39 +57,41 @@
         </Group>
 
         <!-- ===================== DETAIL PANEL (left, PC-style) ============ -->
-        <Group id="detailPanel" translation="[48,128]" opacity="0.0">
-            <Rectangle id="panelBg" width="676" height="804" color="0x0a1018f2" />
-            <Rectangle id="accentBar" width="8" height="804" color="0x5fe3ffff" />
+        <Group id="detailPanel" translation="[48,112]" opacity="0.0">
+            <Rectangle id="panelBg" width="704" height="906" color="0x0a1018f2" />
+            <Rectangle id="accentBar" width="8" height="906" color="0x5fe3ffff" />
 
             <!-- hero image (with category-tinted placeholder when none) -->
-            <Rectangle id="heroPlaceholder" translation="[8,0]" width="668" height="324" color="0x12203322" />
-            <Label id="heroWatermark" translation="[8,130]" width="668" horizAlign="center"
+            <Rectangle id="heroPlaceholder" translation="[8,0]" width="696" height="296" color="0x12203322" />
+            <Label id="heroWatermark" translation="[8,116]" width="696" horizAlign="center"
                    font="font:LargeBoldSystemFont" color="0x5fe3ff44" text="" />
-            <Poster id="heroImg" translation="[8,0]" width="668" height="324"
+            <Poster id="heroImg" translation="[8,0]" width="696" height="296"
                     loadDisplayMode="scaleToFill" />
-            <Rectangle id="heroShade" translation="[8,276]" width="668" height="48" color="0x0a1018cc" />
+            <Rectangle id="heroShade" translation="[8,248]" width="696" height="48" color="0x0a1018cc" />
 
-            <Label id="categoryTag" translation="[36,360]"
+            <Label id="categoryTag" translation="[36,332]"
                    font="font:MediumBoldSystemFont" color="0x5fe3ffff" text="" />
-            <Label id="timeLabel" translation="[472,360]" width="168" horizAlign="right"
+            <Label id="timeLabel" translation="[504,332]" width="164" horizAlign="right"
                    font="font:MediumSystemFont" color="0x8aa0b4ff" text="" />
 
-            <Label id="titleLabel" translation="[36,410]"
-                   width="604" height="136" wrap="true"
+            <!-- title height fits ~5 lines; place/coords/source/blurb are
+                 repositioned in code based on the actual headline length -->
+            <Label id="titleLabel" translation="[36,380]"
+                   width="632" height="188" wrap="true"
                    font="font:LargeBoldSystemFont" color="0xffffffff" text="" />
 
-            <Label id="placeLabel" translation="[36,566]" width="604"
+            <Label id="placeLabel" translation="[36,588]" width="632"
                    font="font:MediumBoldSystemFont" color="0x5fe3ffff" text="" />
-            <Label id="coordLabel" translation="[36,606]" width="604"
+            <Label id="coordLabel" translation="[36,626]" width="632"
                    font="font:SmallSystemFont" color="0x8aa0b4ff" text="" />
-            <Label id="sourceLabel" translation="[36,640]" width="604"
+            <Label id="sourceLabel" translation="[36,656]" width="632"
                    font="font:SmallSystemFont" color="0x6f8294ff" text="" />
 
-            <Label id="blurbLabel" translation="[36,692]"
-                   width="604" height="80" wrap="true"
+            <Label id="blurbLabel" translation="[36,700]"
+                   width="632" height="150" wrap="true"
                    font="font:MediumSystemFont" color="0xcdd9eaff" text="" />
 
-            <Label id="hintLabel" translation="[36,776]" width="604"
+            <Label id="hintLabel" translation="[36,880]" width="632"
                    font="font:SmallestSystemFont" color="0x6f8294ff"
                    text="Press OK to scan QR · read full article on your phone" />
         </Group>
@@ -152,7 +154,7 @@
                 key="[0.0,1.0]" keyValue="[0.0,1.0]" />
             <Vector2DFieldInterpolator
                 fieldToInterp="detailPanel.translation"
-                key="[0.0,1.0]" keyValue="[[48,136],[48,128]]" />
+                key="[0.0,1.0]" keyValue="[[48,120],[48,112]]" />
         </Animation>
 
         <Animation id="qrFadeIn" duration="0.3" easeFunction="outQuad">
@@ -168,7 +170,7 @@
 
         <!-- ===================== TIMERS ===================== -->
         <Timer id="markerTick"   repeat="true" duration="0.033" />
-        <Timer id="cycleTimer"   repeat="true" duration="13.5" />
+        <Timer id="cycleTimer"   repeat="true" duration="27" />
         <Timer id="refreshTimer" repeat="true" duration="300" />
 
     </children>
