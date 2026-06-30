@@ -291,7 +291,7 @@ sub startSpinToNext()
         onArrive()                       ' already centred (same longitude)
     else
         m.spinning = true
-        m.globeVideo.control = "play"
+        m.globeVideo.control = "resume"  ' resume (NOT play) so it doesn't re-buffer to black
         m.basePos = m.globeVideo.position
         m.clock.Mark()
     end if

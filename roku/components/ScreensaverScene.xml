@@ -67,7 +67,6 @@
                    font="font:LargeBoldSystemFont" color="0x5fe3ff44" text="" />
             <Poster id="heroImg" translation="[8,0]" width="696" height="240"
                     loadDisplayMode="scaleToZoom" />
-            <Rectangle id="heroShade" translation="[8,192]" width="696" height="48" color="0x0a1018cc" />
 
             <Label id="categoryTag" translation="[36,278]"
                    font="font:MediumBoldSystemFont" color="0x5fe3ffff" text="" />
