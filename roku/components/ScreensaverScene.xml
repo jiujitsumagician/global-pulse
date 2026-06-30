@@ -26,6 +26,12 @@
                    enableUI="false" loop="true" mute="true"
                    notificationInterval="0.1" />
 
+            <!-- Still globe shown while holding on an event (a paused Video
+                 renders black on this device, so we cover it with a matching
+                 still frame on the graphics plane). -->
+            <Poster id="globeStill" translation="[0,0]" width="1920" height="1080"
+                    loadDisplayMode="scaleToFill" visible="false" />
+
             <Group id="markersGroup" />
 
             <Group id="highlightGroup" translation="[-800,-800]">

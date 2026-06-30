@@ -42,7 +42,14 @@ sub init()
     ' Nodes.
     m.globeCamera = m.top.findNode("globeCamera")
     m.globeVideo  = m.top.findNode("globeVideo")
+    m.globeStill  = m.top.findNode("globeStill")
     m.markersGroup = m.top.findNode("markersGroup")
+
+    ' still frames matching the video, one per 5 deg (lon0 = -j*5)
+    m.stillUris = []
+    for j = 0 to 71
+        m.stillUris.push("pkg:/images/globe_still/still_" + pad3(j) + ".jpg")
+    end for
     m.highlightGroup = m.top.findNode("highlightGroup")
     m.highlightHalo  = m.top.findNode("highlightHalo")
 
@@ -140,6 +147,11 @@ end sub
 sub onMarkerTick()
     if not m.started then return
     if m.spinning
+        ' reveal the live (rotating) video only once it's actually playing,
+        ' so the resume from pause never shows through as black
+        if m.globeStill.visible and m.globeVideo.state = "playing"
+            m.globeStill.visible = false
+        end if
         t = m.basePos + (m.clock.TotalMilliseconds() / 1000.0)
         frac = (t / m.secPerRev) - Int(t / m.secPerRev)
         curL = frac * 360.0
@@ -147,7 +159,7 @@ sub onMarkerTick()
         reprojectMarkers()
         if normalize360(curL - m.spinStartL) >= m.spinDelta then onArrive()
     else
-        reprojectMarkers()        ' paused: curLon0 frozen, event stays centered
+        reprojectMarkers()        ' holding: still shown, markers frozen on the event
     end if
 end sub
 
@@ -290,8 +302,10 @@ sub startSpinToNext()
     if m.spinDelta < 2.0
         onArrive()                       ' already centred (same longitude)
     else
+        ' resume the video; keep the still up until the video is actually
+        ' playing again (onMarkerTick hides it) so there's no black flash
         m.spinning = true
-        m.globeVideo.control = "resume"  ' resume (NOT play) so it doesn't re-buffer to black
+        m.globeVideo.control = "resume"
         m.basePos = m.globeVideo.position
         m.clock.Mark()
     end if
@@ -299,8 +313,18 @@ end sub
 
 sub onArrive()
     m.spinning = false
-    m.globeVideo.control = "pause"       ' stop the globe on the event location
-    m.curLon0 = m.spinTargetLon0
+    e = m.events[m.index]
+
+    ' snap to the nearest still frame and show it (the paused video is black on
+    ' this device, so the still — on the graphics plane — is what's displayed)
+    targetL = normalize360(- asFloat(e.lng))
+    j = Int(targetL / 5.0 + 0.5)
+    if j >= 72 then j = 0
+    m.curLon0 = - (j * 5.0)
+    m.globeStill.uri = m.stillUris[j]
+    m.globeStill.visible = true
+    m.globeVideo.control = "pause"       ' hidden behind the still; just stops it advancing
+
     reprojectMarkers()
     applyCurrentEvent()
     m.fadeIn.control = "start"
@@ -485,6 +509,13 @@ end function
 
 ' Rough line-count estimate for a wrapped Label (proportional font), used to
 ' reflow the panel. Slightly over-estimates so blocks don't collide.
+function pad3(i as integer) as string
+    s = i.ToStr()
+    if Len(s) = 1 then return "00" + s
+    if Len(s) = 2 then return "0" + s
+    return s
+end function
+
 function normalize360(x as float) as float
     y = x - Int(x / 360.0) * 360.0
     if y < 0.0 then y = y + 360.0
