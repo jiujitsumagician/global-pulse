@@ -16,6 +16,11 @@
       qrOverlay .......... full-screen panel on OK/Select
 -->
 <component name="ScreensaverScene" extends="Scene">
+    <interface>
+        <!-- true when launched as the active screensaver (input disabled for
+             certification); false when launched as a channel (QR enabled) -->
+        <field id="isScreensaver" type="boolean" value="false" />
+    </interface>
     <script type="text/brightscript" uri="pkg:/components/ScreensaverScene.brs" />
 
     <children>

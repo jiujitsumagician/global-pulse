@@ -11,19 +11,20 @@
 ' ============================================================
 
 sub RunScreenSaver()
-    startScene()
+    startScene(true)
 end sub
 
 sub Main()
-    startScene()
+    startScene(false)
 end sub
 
-sub startScene()
+sub startScene(isSaver as boolean)
     screen = CreateObject("roSGScreen")
     m.port = CreateObject("roMessagePort")
     screen.setMessagePort(m.port)
 
     scene = screen.CreateScene("ScreensaverScene")
+    scene.isScreensaver = isSaver      ' input disabled in saver mode (cert)
     screen.show()
 
     while true

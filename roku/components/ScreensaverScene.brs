@@ -367,6 +367,9 @@ sub applyCurrentEvent()
     m.panelBg.height = panelH
     m.accentBar.height = panelH
 
+    ' the QR hint only applies when launched as a channel (saver takes no input)
+    m.hintLabel.visible = (not m.top.isScreensaver)
+
     m.placeLabel.text = "◉ " + nz(e.place, "")
     m.timeLabel.text = relativeTime(e.time)
     m.coordLabel.text = formatCoord(e.lat, e.lng)
@@ -435,6 +438,9 @@ end function
 ' QR overlay
 ' ------------------------------------------------------------
 function onKeyEvent(key as string, press as boolean) as boolean
+    ' As the active screensaver, never consume keys — let the firmware dismiss
+    ' the saver on any press (Roku certification requires no screensaver input).
+    if m.top.isScreensaver then return false
     if not press then return false
     if key = "OK"
         if not m.overlayOpen then
