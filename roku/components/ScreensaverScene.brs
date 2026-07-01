@@ -60,7 +60,6 @@ sub init()
 
     m.detailPanel = m.top.findNode("detailPanel")
     m.panelBg     = m.top.findNode("panelBg")
-    m.hintLabel   = m.top.findNode("hintLabel")
     m.categoryTag = m.top.findNode("categoryTag")
     m.titleLabel  = m.top.findNode("titleLabel")
     m.placeLabel  = m.top.findNode("placeLabel")
@@ -73,18 +72,9 @@ sub init()
     m.heroPlaceholder = m.top.findNode("heroPlaceholder")
     m.heroWatermark   = m.top.findNode("heroWatermark")
 
-    m.qrOverlay  = m.top.findNode("qrOverlay")
-    m.qrPoster   = m.top.findNode("qrPoster")
-    m.qrCategory = m.top.findNode("qrCategory")
-    m.qrTitle    = m.top.findNode("qrTitle")
-    m.qrPlace    = m.top.findNode("qrPlace")
-    m.qrTime     = m.top.findNode("qrTime")
-
     m.pulseAnim = m.top.findNode("pulseAnim")
     m.fadeOut   = m.top.findNode("fadeOut")
     m.fadeIn    = m.top.findNode("fadeIn")
-    m.qrFadeIn  = m.top.findNode("qrFadeIn")
-    m.qrFadeOut = m.top.findNode("qrFadeOut")
 
     m.markerTick   = m.top.findNode("markerTick")
     m.cycleTimer   = m.top.findNode("cycleTimer")
@@ -99,7 +89,6 @@ sub init()
     m.clock = CreateObject("roTimespan")
     m.clock.Mark()
     m.index = -1
-    m.overlayOpen = false
 
     ' rotate-to-event-then-pause tour
     m.spinning = false
@@ -130,7 +119,6 @@ sub init()
     m.clockTimer.observeField("fire", "onClockTick")
     m.clockTimer.control = "start"
     updateClock()
-    m.top.setFocus(true)
 
     startFetch()
 end sub
@@ -314,10 +302,6 @@ end sub
 sub startSpinToNext()
     if m.events = invalid or m.events.count() = 0 then return
     if m.tourOrder.count() = 0 then return
-    if m.overlayOpen
-        m.cycleTimer.control = "start"   ' defer while the QR overlay is open
-        return
-    end if
 
     m.tourPos = (m.tourPos + 1) mod m.tourOrder.count()
     m.index = m.tourOrder[m.tourPos]
@@ -400,9 +384,6 @@ sub applyCurrentEvent()
     m.panelBg.height = panelH
     m.accentBar.height = panelH
 
-    ' the QR hint only applies when launched as a channel (saver takes no input)
-    m.hintLabel.visible = (not m.top.isScreensaver)
-
     m.placeLabel.text = "◉ " + nz(e.place, "")
     m.timeLabel.text = relativeTime(e.time)
     m.coordLabel.text = formatCoord(e.lat, e.lng)
@@ -466,63 +447,6 @@ function fallbackBlurb(e as object) as string
     end if
     return "Reported via " + nz(e.source, "wire services") + " from " + place + ". Press OK to open the full article on your phone."
 end function
-
-' ------------------------------------------------------------
-' QR overlay
-' ------------------------------------------------------------
-function onKeyEvent(key as string, press as boolean) as boolean
-    ' As the active screensaver, never consume keys — let the firmware dismiss
-    ' the saver on any press (Roku certification requires no screensaver input).
-    if m.top.isScreensaver then return false
-    if not press then return false
-    if key = "OK"
-        if not m.overlayOpen then
-            showQR()
-            return true
-        end if
-    else if key = "back" or key = "up"
-        if m.overlayOpen then
-            hideQR()
-            return true
-        end if
-    end if
-    return false
-end function
-
-sub showQR()
-    if m.index < 0 or m.index >= m.events.count() then return
-    e = m.events[m.index]
-    m.overlayOpen = true
-
-    m.qrCategory.text = UCase(nz(e.category, "News"))
-    m.qrCategory.color = categoryColor(e.category)
-    m.qrTitle.text = nz(m.titleLabel.text, nz(e.title, ""))
-    m.qrPlace.text = nz(e.place, "")
-    m.qrTime.text = relativeTime(e.time)
-
-    url = nz(e.url, "")
-    if url <> ""
-        m.qrPoster.uri = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=8&data=" + encodeURIComponent(url)
-    else
-        m.qrPoster.uri = ""
-    end if
-
-    m.qrOverlay.visible = true
-    m.qrFadeIn.control = "start"
-end sub
-
-sub hideQR()
-    m.overlayOpen = false
-    m.qrFadeOut.observeField("state", "onQrFadeOutDone")
-    m.qrFadeOut.control = "start"
-end sub
-
-sub onQrFadeOutDone()
-    if m.qrFadeOut.state = "stopped"
-        m.qrOverlay.visible = false
-        m.qrFadeOut.unobserveField("state")
-    end if
-end sub
 
 ' ------------------------------------------------------------
 ' Helpers
@@ -600,25 +524,4 @@ function relativeTime(ms as dynamic) as string
     if hrs < 24 then return hrs.ToStr() + "h ago"
     days = Int(hrs / 24)
     return days.ToStr() + "d ago"
-end function
-
-function encodeURIComponent(s as string) as string
-    safe = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~"
-    out = ""
-    for i = 0 to Len(s) - 1
-        ch = Mid(s, i + 1, 1)
-        if Instr(1, safe, ch) > 0
-            out = out + ch
-        else
-            out = out + "%" + toHex2(Asc(ch))
-        end if
-    end for
-    return out
-end function
-
-function toHex2(code as integer) as string
-    digits = "0123456789ABCDEF"
-    hi = Int(code / 16)
-    lo = code - hi * 16
-    return Mid(digits, hi + 1, 1) + Mid(digits, lo + 1, 1)
 end function

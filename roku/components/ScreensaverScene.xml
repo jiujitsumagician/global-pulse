@@ -16,11 +16,6 @@
       qrOverlay .......... full-screen panel on OK/Select
 -->
 <component name="ScreensaverScene" extends="Scene">
-    <interface>
-        <!-- true when launched as the active screensaver (input disabled for
-             certification); false when launched as a channel (QR enabled) -->
-        <field id="isScreensaver" type="boolean" value="false" />
-    </interface>
     <script type="text/brightscript" uri="pkg:/components/ScreensaverScene.brs" />
 
     <children>
@@ -109,44 +104,6 @@
                    width="632" height="150" wrap="true"
                    font="font:MediumSystemFont" color="0xcdd9eaff" text="" />
 
-            <Label id="hintLabel" translation="[36,880]" width="632"
-                   font="font:SmallestSystemFont" color="0x6f8294ff"
-                   text="Press OK to scan QR · read full article on your phone" />
-        </Group>
-
-        <!-- ===================== QR OVERLAY ===================== -->
-        <Group id="qrOverlay" opacity="0.0" visible="false">
-            <Rectangle width="1920" height="1080" color="0x02040aee" />
-            <Rectangle id="qrPanelBg" translation="[260,150]"
-                       width="1400" height="780" color="0x0c1422ff" />
-            <Rectangle id="qrAccent" translation="[260,150]"
-                       width="1400" height="8" color="0x5fe3ffff" />
-
-            <Label id="qrCategory" translation="[320,210]"
-                   font="font:MediumBoldSystemFont" color="0x5fe3ffff" text="" />
-            <Label id="qrTitle" translation="[320,256]"
-                   width="780" height="320" wrap="true"
-                   font="font:LargeBoldSystemFont" color="0xffffffff" text="" />
-            <Label id="qrPlace" translation="[320,600]"
-                   width="780"
-                   font="font:MediumSystemFont" color="0xb9c6d6ff" text="" />
-            <Label id="qrTime" translation="[320,648]"
-                   width="780"
-                   font="font:MediumSystemFont" color="0x8aa0b4ff" text="" />
-
-            <Rectangle translation="[1170,250]" width="340" height="340" color="0xffffffff" />
-            <Poster id="qrPoster" translation="[1190,270]"
-                    width="300" height="300"
-                    loadDisplayMode="scaleToFit" />
-
-            <Label id="qrScanHint" translation="[1170,600]"
-                   width="340" horizAlign="center"
-                   font="font:MediumSystemFont" color="0xb9c6d6ff"
-                   text="Scan to open on your phone" />
-            <Label id="qrDismiss" translation="[320,820]"
-                   width="1280"
-                   font="font:SmallSystemFont" color="0x6f8294ff"
-                   text="Press Back or Up to return to Global Pulse" />
         </Group>
 
         <!-- ===================== ANIMATIONS ===================== -->
@@ -173,17 +130,6 @@
             <Vector2DFieldInterpolator
                 fieldToInterp="detailPanel.translation"
                 key="[0.0,1.0]" keyValue="[[48,120],[48,112]]" />
-        </Animation>
-
-        <Animation id="qrFadeIn" duration="0.3" easeFunction="outQuad">
-            <FloatFieldInterpolator
-                fieldToInterp="qrOverlay.opacity"
-                key="[0.0,1.0]" keyValue="[0.0,1.0]" />
-        </Animation>
-        <Animation id="qrFadeOut" duration="0.25" easeFunction="outQuad">
-            <FloatFieldInterpolator
-                fieldToInterp="qrOverlay.opacity"
-                key="[0.0,1.0]" keyValue="[1.0,0.0]" />
         </Animation>
 
         <!-- ===================== TIMERS ===================== -->

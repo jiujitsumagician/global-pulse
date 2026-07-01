@@ -10,21 +10,14 @@
 ' development. Both spin up the same SceneGraph scene.
 ' ============================================================
 
+' Screensavers must export ONLY RunScreenSaver() — Main()/RunUserInterface() are
+' prohibited by Roku certification, and the saver takes no user input.
 sub RunScreenSaver()
-    startScene(true)
-end sub
-
-sub Main()
-    startScene(false)
-end sub
-
-sub startScene(isSaver as boolean)
     screen = CreateObject("roSGScreen")
     m.port = CreateObject("roMessagePort")
     screen.setMessagePort(m.port)
 
     scene = screen.CreateScene("ScreensaverScene")
-    scene.isScreensaver = isSaver      ' input disabled in saver mode (cert)
     screen.show()
 
     while true
