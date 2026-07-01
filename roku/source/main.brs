@@ -15,6 +15,25 @@ sub RunScreenSaver()
     port = CreateObject("roMessagePort")
     screen.setMessagePort(port)
 
+    ' Memory monitoring (Roku certification best practice). Some of these APIs
+    ' are gated on newer Roku OS, so guard them — they enable on capable devices
+    ' and no-op safely on older ones (the saver streams its media, so its
+    ' footprint is tiny either way).
+    try
+        mem = CreateObject("roAppMemoryMonitor")
+        mem.SetMessagePort(port)
+        mem.EnableMemoryWarningEvent(true)
+        mem.GetMemoryLimitPercent()
+        mem.GetChannelMemoryLimit()
+        mem.GetChannelAvailableMemory()
+    catch memErr
+    end try
+    try
+        di = CreateObject("roDeviceInfo")
+        di.EnableLowGeneralMemoryEvent(true)
+    catch devErr
+    end try
+
     screen.CreateScene("ScreensaverScene")
     screen.show()
 

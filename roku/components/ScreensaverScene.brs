@@ -458,15 +458,15 @@ function fallbackBlurb(e as object) as string
     if e.type <> invalid then t = LCase(e.type)
     place = nz(e.place, "the region")
     if t = "quake"
-        return "A magnitude " + formatMag(e.mag) + " earthquake was recorded near " + place + ". Live seismic data from the USGS — press OK for the full event report."
+        return "A magnitude " + formatMag(e.mag) + " earthquake was recorded near " + place + ". Live seismic data from the USGS."
     else if t = "space"
-        return nz(e.title, "A rocket launch") + " — staged from " + place + ". Tracked via The Space Devs launch database. Press OK for mission details."
+        return nz(e.title, "A rocket launch") + " — staged from " + place + ". Tracked via The Space Devs launch database."
     else if t = "nature"
-        return nz(e.title, "An active natural event") + " (" + place + "), tracked by NASA EONET. Press OK for the latest source reports."
+        return nz(e.title, "An active natural event") + " (" + place + "), tracked by NASA EONET."
     else if t = "weather"
         return "An active severe-weather alert for " + place + ", issued by the US National Weather Service."
     end if
-    return "Reported via " + nz(e.source, "wire services") + " from " + place + ". Press OK to open the full article on your phone."
+    return "Reported via " + nz(e.source, "wire services") + " from " + place + "."
 end function
 
 ' ------------------------------------------------------------
