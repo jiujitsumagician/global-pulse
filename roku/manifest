@@ -11,7 +11,8 @@
 # name shown in the screensaver picker.
 # ------------------------------------------------------------
 
-title=Global Pulse
+# Standalone screensaver: use ONLY screensaver_title (a `title` key signals a
+# normal channel to the store analyzer and misclassifies it as channel_type=channel).
 screensaver_title=Global Pulse
 
 major_version=1

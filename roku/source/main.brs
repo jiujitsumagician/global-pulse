@@ -12,14 +12,14 @@
 ' prohibited by Roku certification, and the saver takes no user input.
 sub RunScreenSaver()
     screen = CreateObject("roSGScreen")
-    m.port = CreateObject("roMessagePort")
-    screen.setMessagePort(m.port)
+    port = CreateObject("roMessagePort")
+    screen.setMessagePort(port)
 
     screen.CreateScene("ScreensaverScene")
     screen.show()
 
     while true
-        msg = wait(0, m.port)
+        msg = wait(0, port)
         if type(msg) = "roSGScreenEvent"
             if msg.isScreenClosed() then return
         end if
