@@ -8,8 +8,9 @@
 - SKU (suggest): `global-pulse-firetv`
 
 ## Category
-- Primary: **Entertainment**
-- (Alt: News & Weather)
+- Primary: **News & Weather** (Entertainment is not offered in the console)
+- Subcategory: **Feed Aggregators** (fits — it aggregates 5 live feeds: news,
+  USGS quakes, NASA EONET, weather, spaceflight)
 
 ## Price (recommended)
 **$2.99** — paid app, one-time purchase.

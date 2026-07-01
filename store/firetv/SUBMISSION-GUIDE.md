@@ -55,7 +55,7 @@ zero to "Submit for review." ~20 minutes.
 ## Step 5 — App details (listing)
 Copy from `store/firetv/LISTING.md`:
 1. **Short description** and **Long description** — paste the two blocks.
-2. **Category:** Entertainment (or News & Weather).
+2. **Category:** News & Weather.
 3. **Keywords/search terms:** paste the keyword line.
 4. **Contact info + Privacy policy URL:**
    https://jiujitsumagician.github.io/global-pulse/privacy.html
