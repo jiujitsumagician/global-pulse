@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- TV mode (?tv): lay out at a fixed 1920px width so a high-density TV WebView
+     (e.g. Fire TV: 1920x1080 @ density 2 = 960 CSS px) renders like a 1080p desktop -->
+<script>if(new URLSearchParams(location.search).has('tv')){var _m=document.querySelector('meta[name=viewport]');if(_m)_m.content='width=1920';}</script>
 <title>Global Pulse — Live World Events</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#05070d">
@@ -185,8 +188,8 @@
 (()=>{
 "use strict";
 const API = (location.protocol==='file:') ? 'https://global-pulse-two.vercel.app' : '';
-const TVSCALE = (()=>{ const u=new URLSearchParams(location.search); if(u.get('tv')) return parseFloat(u.get('tv'))||1.5;
-  return Math.min(2.0, Math.max(1, Math.min(innerWidth,innerHeight)/620)); })();
+const isTV = new URLSearchParams(location.search).has('tv');
+const TVSCALE = Math.min(2.0, Math.max(1, Math.min(innerWidth,innerHeight)/620));
 document.documentElement.style.setProperty('--scale', TVSCALE);
 
 const CATS={
@@ -200,12 +203,17 @@ const cat=e=>CATS[e&&e.category]||CATS.News;
 const $=id=>document.getElementById(id);
 
 /* ---------------- globe ---------------- */
+// Same-origin earth texture (cross-origin unpkg textures are CORS-tainted -> black
+// globe in the Fire TV WebView). On TV, also drop bump/night-sky + cap pixelRatio
+// to keep the weaker GPU smooth.
 const world = Globe()(document.getElementById('globe'))
-  .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-  .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
-  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-  .atmosphereColor('#5fb8ff').atmosphereAltitude(0.22)
+  .globeImageUrl('earth.jpg')
+  .atmosphereColor('#5fb8ff').atmosphereAltitude(isTV?0.18:0.22)
   .width(innerWidth).height(innerHeight);
+if(!isTV){ world
+  .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png'); }
+if(isTV){ try{ world.renderer().setPixelRatio(1); }catch(e){} }
 world.controls().autoRotate=true; world.controls().autoRotateSpeed=0.42; world.controls().enableDamping=true;
 world.pointOfView({lat:20,lng:0,altitude:2.5});
 addEventListener('resize',()=>world.width(innerWidth).height(innerHeight));
@@ -257,7 +265,7 @@ function rel(t){ const s=(Date.now()-t)/1000; if(s<60)return Math.max(1,Math.flo
 function esc(s){ return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 function renderFeed(){
   const list=$('feedList'); list.innerHTML='';
-  events.slice(0,24).forEach((ev,i)=>{ const c=cat(ev), el=document.createElement('div');
+  (playlist.length?playlist:events).slice(0,24).forEach((ev,i)=>{ const c=cat(ev), el=document.createElement('div');
     el.className='card'+(current&&current.id===ev.id?' on':''); el.style.borderLeftColor=c.c; el.dataset.id=ev.id;
     el.innerHTML=`<div class="tag" style="color:${c.c}">${c.label}</div><div class="ttl">${esc(ev.title)}</div>
       <div class="meta"><span class="pl">${esc(ev.place)}</span><span>${rel(ev.time)} ago</span></div>`;
@@ -283,7 +291,7 @@ function buildPlaylist(){
 function focus(ev,manual){ if(!ev) return; current=ev;
   const i=playlist.findIndex(e=>e&&e.id===ev.id); if(i>=0) cur=i;
   world.controls().autoRotate=false;
-  world.pointOfView({lat:ev.lat,lng:ev.lng,altitude:0.78},1600);
+  world.pointOfView({lat:ev.lat,lng:ev.lng,altitude:isTV?1.05:0.78},1600);
   world.ringsData([ev]);
   renderDetail(ev);
   renderFeed(); const card=document.querySelector('.card[data-id="'+CSS.escape(ev.id)+'"]'); if(card) card.scrollIntoView({block:'nearest'});
@@ -302,7 +310,8 @@ function renderDetail(ev){
   $('dCoords').textContent=ev.lat.toFixed(2)+'°, '+ev.lng.toFixed(2)+'°';
   $('dSrc').textContent=(ev.source||'').toUpperCase();
   const img=$('dImg'); img.classList.remove('on');
-  if(ev.image){ img.onload=()=>img.classList.add('on'); img.onerror=()=>{}; img.src=ev.image; } else { img.removeAttribute('src'); }
+  if(ev.image){ $('dHero').style.display=''; img.onload=()=>img.classList.add('on'); img.onerror=()=>{ $('dHero').style.display='none'; }; img.src=ev.image; }
+  else { $('dHero').style.display='none'; img.removeAttribute('src'); }
   $('dQr').src='https://api.qrserver.com/v1/create-qr-code/?size=130x130&margin=0&data='+encodeURIComponent(ev.url||'');
   $('dBlurb').innerHTML='<div class="skel" style="width:96%"></div><div class="skel" style="width:88%"></div><div class="skel" style="width:64%"></div>';
   renderRelated(ev);
@@ -316,7 +325,7 @@ async function loadDetail(ev){
   if(seq!==detailSeq) return;          // a newer focus superseded this
   const paras=(info&&info.paragraphs&&info.paragraphs.length)? info.paragraphs : fallbackBlurb(ev);
   $('dBlurb').innerHTML=paras.slice(0,3).map(p=>'<p>'+esc(p)+'</p>').join('');
-  if(!ev.image && info && info.images && info.images[0]){ const img=$('dImg'); img.onload=()=>img.classList.add('on'); img.src=info.images[0]; }
+  if(!ev.image && info && info.images && info.images[0]){ $('dHero').style.display=''; const img=$('dImg'); img.onload=()=>img.classList.add('on'); img.src=info.images[0]; }
 }
 function fallbackBlurb(ev){
   if(ev.category==='Quake') return ['A magnitude '+(ev.mag||'?')+' earthquake was recorded near '+ev.place+'.',
@@ -335,7 +344,7 @@ function renderRelated(ev){
   if(!near.length){ box.innerHTML=''; head.style.display='none'; return; }
   head.style.display='block';
   box.innerHTML=near.map(e=>{ const cc=cat(e);
-    const im=e.image? '<img src="'+esc(e.image)+'">' : '<div style="width:46px;height:36px;border-radius:5px;flex:none;background:'+cc.c+'22"></div>';
+    const im=e.image? '<img src="'+esc(e.image)+'">' : '';
     return '<div class="drel" data-id="'+esc(e.id)+'">'+im+'<div class="rt" style="border-left:2px solid '+cc.c+';padding-left:7px">'+esc(e.title)+'</div></div>';
   }).join('');
   box.querySelectorAll('.drel').forEach(el=>el.onclick=()=>focusId(el.dataset.id,true));

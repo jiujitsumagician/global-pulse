@@ -6,3 +6,10 @@ node_modules
 
 .tmp_video/
 .tmp_video2/
+.tv_test/
+firetv/local.properties
+firetv/build/
+firetv/.gradle/
+firetv/app/build/
+firetv/*.png
+firetv/*.apk

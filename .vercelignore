@@ -1,0 +1,12 @@
+roku/
+firetv/
+store/
+docs/
+tools/
+windows/
+.tv_test/
+.tmp_video/
+.tmp_video2/
+*.pkg
+*.zip
+.git/
