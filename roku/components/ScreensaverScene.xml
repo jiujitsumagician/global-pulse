@@ -67,6 +67,14 @@
                    color="0x8aa2bfff" font="font:SmallSystemFont" />
         </Group>
 
+        <!-- ===================== LOCAL CLOCK (bottom-right) ============== -->
+        <Group id="clockGroup">
+            <Label id="timeText" translation="[1400,912]" width="460" horizAlign="right"
+                   font="font:LargeBoldSystemFont" color="0xffffffff" text="" />
+            <Label id="dateText" translation="[1200,978]" width="660" horizAlign="right"
+                   font="font:MediumSystemFont" color="0xb9c6d6ff" text="" />
+        </Group>
+
         <!-- ===================== DETAIL PANEL (left, PC-style) ============ -->
         <Group id="detailPanel" translation="[48,112]" opacity="0.0">
             <Rectangle id="panelBg" width="704" height="906" color="0x0a1018f2" />
@@ -180,6 +188,7 @@
 
         <!-- ===================== TIMERS ===================== -->
         <Timer id="markerTick"   repeat="true" duration="0.033" />
+        <Timer id="clockTimer"   repeat="true" duration="10" />
         <Timer id="cycleTimer"   repeat="false" duration="27" />
         <Timer id="refreshTimer" repeat="true" duration="300" />
 

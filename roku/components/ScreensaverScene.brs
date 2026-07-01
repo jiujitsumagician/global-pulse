@@ -55,6 +55,8 @@ sub init()
 
     m.liveTxt  = m.top.findNode("liveTxt")
     m.evCount  = m.top.findNode("evCount")
+    m.timeText = m.top.findNode("timeText")
+    m.dateText = m.top.findNode("dateText")
 
     m.detailPanel = m.top.findNode("detailPanel")
     m.panelBg     = m.top.findNode("panelBg")
@@ -87,6 +89,7 @@ sub init()
     m.markerTick   = m.top.findNode("markerTick")
     m.cycleTimer   = m.top.findNode("cycleTimer")
     m.refreshTimer = m.top.findNode("refreshTimer")
+    m.clockTimer   = m.top.findNode("clockTimer")
 
     ' State.
     m.events = []
@@ -124,9 +127,39 @@ sub init()
 
     m.markerTick.control = "start"
     m.refreshTimer.control = "start"   ' cycleTimer (dwell) starts on first arrival
+    m.clockTimer.observeField("fire", "onClockTick")
+    m.clockTimer.control = "start"
+    updateClock()
     m.top.setFocus(true)
 
     startFetch()
+end sub
+
+' ------------------------------------------------------------
+' Local clock (device time zone) — bottom-right
+' ------------------------------------------------------------
+sub onClockTick()
+    updateClock()
+end sub
+
+sub updateClock()
+    dt = CreateObject("roDateTime")
+    dt.ToLocalTime()
+
+    hh = dt.GetHours()
+    mm = dt.GetMinutes()
+    ampm = "AM"
+    if hh >= 12 then ampm = "PM"
+    h12 = hh mod 12
+    if h12 = 0 then h12 = 12
+    mmStr = mm.ToStr()
+    if mm < 10 then mmStr = "0" + mmStr
+    m.timeText.text = h12.ToStr() + ":" + mmStr + " " + ampm
+
+    months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+    mo = dt.GetMonth()
+    if mo < 1 or mo > 12 then mo = 1
+    m.dateText.text = dt.GetWeekday() + ", " + months[mo - 1] + " " + dt.GetDayOfMonth().ToStr()
 end sub
 
 ' ------------------------------------------------------------
