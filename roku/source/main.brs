@@ -1,13 +1,11 @@
 ' ============================================================
-' Global Pulse - entry points
+' Global Pulse - screensaver entry point
 ' ============================================================
-' RunScreenSaver() is the screensaver entry point. When a
-' sideloaded channel exports this sub, Roku lists it under
-' Settings > Screensaver and runs it as the active saver.
-'
-' Main() is provided so you can ALSO launch the channel
-' normally from the Home screen to preview it during
-' development. Both spin up the same SceneGraph scene.
+' RunScreenSaver() is the ONLY entry point. Roku certification
+' requires screensavers to export RunScreenSaver() and NOT
+' Main()/RunUserInterface(). It runs as the active saver on idle.
+' (To preview during development, temporarily add a Main() that
+' calls RunScreenSaver, then remove it before packaging.)
 ' ============================================================
 
 ' Screensavers must export ONLY RunScreenSaver() — Main()/RunUserInterface() are
@@ -17,7 +15,7 @@ sub RunScreenSaver()
     m.port = CreateObject("roMessagePort")
     screen.setMessagePort(m.port)
 
-    scene = screen.CreateScene("ScreensaverScene")
+    screen.CreateScene("ScreensaverScene")
     screen.show()
 
     while true

@@ -45,10 +45,14 @@ sub init()
     m.globeStill  = m.top.findNode("globeStill")
     m.markersGroup = m.top.findNode("markersGroup")
 
+    ' Globe media streams from a public GitHub release (kept out of the <=4MB
+    ' channel package; GitHub CDN = no bandwidth cost).
+    m.assetBase = "https://github.com/jiujitsumagician/global-pulse/releases/download/assets-1/"
+
     ' still frames matching the video, one per 5 deg (lon0 = -j*5)
     m.stillUris = []
     for j = 0 to 71
-        m.stillUris.push("pkg:/images/globe_still/still_" + pad3(j) + ".jpg")
+        m.stillUris.push(m.assetBase + "still_" + pad3(j) + ".jpg")
     end for
     m.highlightGroup = m.top.findNode("highlightGroup")
     m.highlightHalo  = m.top.findNode("highlightHalo")
@@ -98,15 +102,16 @@ sub init()
     m.spinDelta = 0.0
     m.spinTargetLon0 = 0.0
 
-    ' Start the looping globe video.
+    ' Start the looping globe video (streamed from the release).
     content = CreateObject("roSGNode", "ContentNode")
-    content.url = "pkg:/video/globe_spin.mp4"
+    content.url = m.assetBase + "globe_spin.mp4"
     content.streamFormat = "mp4"
     m.globeVideo.content = content
     m.globeVideo.loop = true
     m.globeVideo.enableUI = false
     m.globeVideo.notificationInterval = 0.1
     m.globeVideo.observeField("position", "onVideoPosition")
+    m.globeStill.observeField("loadStatus", "onStillLoaded")
     m.globeVideo.control = "play"
 
     ' Observers / timers.
@@ -332,21 +337,39 @@ sub onArrive()
     m.spinning = false
     e = m.events[m.index]
 
-    ' snap to the nearest still frame and show it (the paused video is black on
-    ' this device, so the still — on the graphics plane — is what's displayed)
+    ' snap to the nearest still frame (the paused video is black on this device,
+    ' so a matching still on the graphics plane is what's shown while holding)
     targetL = normalize360(- asFloat(e.lng))
     j = Int(targetL / 5.0 + 0.5)
     if j >= 72 then j = 0
     m.curLon0 = - (j * 5.0)
-    m.globeStill.uri = m.stillUris[j]
-    m.globeStill.visible = true
-    m.globeVideo.control = "pause"       ' hidden behind the still; just stops it advancing
+
+    ' load the still first; reveal it (and pause the video) only once it's ready
+    ' so a streamed still never flashes through as a black/paused video frame
+    uri = m.stillUris[j]
+    if m.globeStill.uri = uri and m.globeStill.loadStatus = "ready"
+        revealStill()
+    else
+        m.globeStill.uri = uri           ' onStillLoaded fires when ready
+    end if
 
     reprojectMarkers()
     applyCurrentEvent()
     m.fadeIn.control = "start"
     if m.pulseAnim.state <> "running" then m.pulseAnim.control = "start"
     m.cycleTimer.control = "start"       ' begin the dwell hold
+end sub
+
+sub onStillLoaded()
+    ' reveal only when the still we're holding on has finished loading
+    if not m.spinning and m.globeStill.loadStatus = "ready" then revealStill()
+end sub
+
+sub revealStill()
+    m.globeStill.visible = true
+    ' only pause a video that's actually playing — pausing while it's still
+    ' buffering the stream wedges it and it never reaches "playing"
+    if m.started then m.globeVideo.control = "pause"
 end sub
 
 sub applyCurrentEvent()
@@ -377,10 +400,8 @@ sub applyCurrentEvent()
     m.sourceLabel.translation = [36, baseY + 92]
     m.blurbLabel.translation  = [36, baseY + 146]
 
-    ' size the panel + hint to hug the content (no dead space)
-    hintY = baseY + 146 + 150 + 24
-    m.hintLabel.translation = [36, hintY]
-    panelH = hintY + 44
+    ' size the panel to hug the content (no dead space)
+    panelH = baseY + 146 + 150 + 32
     m.panelBg.height = panelH
     m.accentBar.height = panelH
 

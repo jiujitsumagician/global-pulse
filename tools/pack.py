@@ -26,10 +26,12 @@ def main():
     if os.path.exists(OUT):
         os.remove(OUT)
     n = 0
+    # NOTE: the globe video + hold stills are NOT bundled — they stream from a
+    # public GitHub release to keep the package under Roku's 4MB cert limit.
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
         z.write(os.path.join(ROKU, "manifest"), "manifest"); n += 1
         z.write(os.path.join(ROKU, "events_sample.json"), "events_sample.json"); n += 1
-        for sub in ("source", "components", "video"):
+        for sub in ("source", "components"):
             for root, _, files in os.walk(os.path.join(ROKU, sub)):
                 for f in files:
                     full = os.path.join(root, f)
@@ -37,9 +39,6 @@ def main():
         for f in os.listdir(os.path.join(ROKU, "images")):
             if f in KEEP_IMAGES:
                 z.write(os.path.join(ROKU, "images", f), "images/" + f); n += 1
-        gs = os.path.join(ROKU, "images", "globe_still")
-        for f in sorted(os.listdir(gs)):
-            z.write(os.path.join(gs, f), "images/globe_still/" + f); n += 1
 
     size = os.path.getsize(OUT) / 1024 / 1024
     with zipfile.ZipFile(OUT) as z:
