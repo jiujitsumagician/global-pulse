@@ -13,3 +13,4 @@ firetv/.gradle/
 firetv/app/build/
 firetv/*.png
 firetv/*.apk
+firetv/*.jks

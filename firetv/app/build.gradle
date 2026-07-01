@@ -9,7 +9,17 @@ android {
     versionCode 1
     versionName '1.0'
   }
-  buildTypes { release { minifyEnabled false } }
+  signingConfigs {
+    release {
+      // Throwaway key: the Amazon Appstore strips this and re-signs with your
+      // account's own key on submission. The .jks is gitignored.
+      storeFile file('../globalpulse-release.jks')
+      storePassword 'globalpulse'
+      keyAlias 'globalpulse'
+      keyPassword 'globalpulse'
+    }
+  }
+  buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
   compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
 }
 dependencies { }
