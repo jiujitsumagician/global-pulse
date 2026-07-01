@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+  <!-- Granted once via adb (pm grant ... WRITE_SECURE_SETTINGS) so BootReceiver can
+       re-arm the idle screensaver service after a reboot on this local unit. -->
+  <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"/>
   <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
   <uses-feature android:name="android.software.leanback" android:required="true"/>
   <application android:label="Global Pulse" android:banner="@drawable/banner"
@@ -16,5 +20,28 @@
     </activity>
     <activity android:name=".ReaderActivity" android:exported="false" android:screenOrientation="landscape"
         android:configChanges="orientation|screenSize|keyboardHidden|navigation"/>
+    <service android:name=".GlobeDreamService" android:exported="true"
+        android:permission="android.permission.BIND_DREAM_SERVICE">
+      <intent-filter>
+        <action android:name="android.service.dreams.DreamService"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+      </intent-filter>
+    </service>
+    <service android:name=".GlobeIdleService" android:exported="true"
+        android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+      <intent-filter>
+        <action android:name="android.accessibilityservice.AccessibilityService"/>
+      </intent-filter>
+      <meta-data android:name="android.accessibilityservice"
+          android:resource="@xml/globe_idle_accessibility"/>
+    </service>
+    <!-- Separate process so re-enabling the a11y service at boot binds it into a
+         freshly-started main process (Fire OS only clean-binds a11y in a fresh
+         process; the main process is otherwise still alive from the boot bind). -->
+    <receiver android:name=".BootReceiver" android:exported="true" android:process=":boot">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+      </intent-filter>
+    </receiver>
   </application>
 </manifest>

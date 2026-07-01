@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
@@ -16,11 +17,15 @@ import android.webkit.WebViewClient;
  *  GPNative.openArticle(url) when OK is pressed on an event; we open a native reader. */
 public class MainActivity extends Activity {
   static final String APP_URL = "https://global-pulse-two.vercel.app/?tv=1";
+  /** True while the globe is on screen as the idle screensaver (see GlobeIdleService). */
+  static volatile boolean saverShowing = false;
   WebView web;
+  boolean saverMode = false;
 
   @Override protected void onCreate(Bundle b) {
     super.onCreate(b);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    applySaverMode(getIntent());
     WebView.setWebContentsDebuggingEnabled(true);   // allow chrome://inspect + logging
     web = new WebView(this);
     setContentView(web);
@@ -48,6 +53,31 @@ public class MainActivity extends Activity {
     Intent it = getIntent();
     if (it != null && it.getStringExtra("url") != null) url = it.getStringExtra("url");
     web.loadUrl(url);
+  }
+
+  // --- Screensaver mode: launched by GlobeIdleService on idle; any key dismisses. ---
+  private void applySaverMode(Intent it) {
+    saverMode = it != null && it.getBooleanExtra("screensaver", false);
+    if (saverMode) saverShowing = true;
+  }
+
+  @Override protected void onNewIntent(Intent it) {
+    super.onNewIntent(it);
+    setIntent(it);
+    applySaverMode(it);
+  }
+
+  @Override public boolean dispatchKeyEvent(KeyEvent e) {
+    // In screensaver mode, the first real key press dismisses the globe and
+    // hands the TV back. In normal (user-launched) mode, keys behave normally.
+    if (saverMode && e.getAction() == KeyEvent.ACTION_UP) { saverShowing = false; finish(); return true; }
+    if (saverMode) return true;  // swallow the matching ACTION_DOWN so nothing acts on it
+    return super.dispatchKeyEvent(e);
+  }
+
+  @Override protected void onDestroy() {
+    if (saverMode) saverShowing = false;
+    super.onDestroy();
   }
 
   class Bridge {

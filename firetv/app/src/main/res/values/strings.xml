@@ -1,1 +1,4 @@
-<resources><string name="app_name">Global Pulse</string></resources>
+<resources>
+  <string name="app_name">Global Pulse</string>
+  <string name="idle_desc">Shows the Global Pulse globe as a screensaver when your Fire TV is idle, and dismisses it on any button press.</string>
+</resources>
