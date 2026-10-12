@@ -41,7 +41,7 @@ zero to "Submit for review." ~20 minutes.
 1. Open the **APKs / Binary** tab → **Upload your APK**.
 2. Select `C:\Users\mrwil\Desktop\GlobalPulse-firetv.apk`.
 3. Amazon reads the manifest. Confirm it shows:
-   - Package `io.dsio.globalpulse`, versionCode 1, versionName 1.0
+   - Package `io.dsio.globalpulse`, versionCode 2, versionName 1.0.1
    - Permission: INTERNET
 4. **Device targeting / filtering:** Amazon will auto-detect device support from
    the leanback manifest. In the device list, **keep Fire TV devices checked**;
@@ -96,5 +96,6 @@ Upload from `store/firetv/`:
 
 ## After approval
 - To update: bump `versionCode` (and `versionName`) in
-  `firetv/app/build.gradle`, rebuild `assembleRelease`, upload the new APK as a
+  `firetv/app/build.gradle`, rebuild `assembleRelease` (set env `GP_KS_PASS` to the
+  keystore password first; see `firetv/README.md`), upload the new APK as a
   new version in the console.

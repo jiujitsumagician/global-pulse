@@ -22,12 +22,15 @@ public class ReaderActivity extends Activity {
     s.setLoadWithOverviewMode(true);
     s.setUseWideViewPort(true);
     s.setBuiltInZoomControls(false);
+    s.setAllowFileAccess(false);
+    s.setAllowContentAccess(false);
     web.setWebViewClient(new WebViewClient());
     web.setWebChromeClient(new WebChromeClient());
     web.setFocusableInTouchMode(true);
     web.requestFocus();
     String url = getIntent().getStringExtra("url");
-    web.loadUrl(url != null ? url : "about:blank");
+    if (!MainActivity.isWebUrl(url)) { finish(); return; }   // http(s) only
+    web.loadUrl(url);
   }
 
   @Override public boolean onKeyDown(int code, KeyEvent e) {

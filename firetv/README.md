@@ -14,6 +14,15 @@ adb install -r app/build/outputs/apk/release/app-release-unsigned.apk
 ```
 Launch "Global Pulse" from the Fire TV apps row.
 
+## Release signing
+Release builds read the keystore password from the environment so it is not stored in the repo:
+```
+set GP_KS_PASS=<password of globalpulse-release.jks>      (PowerShell: $env:GP_KS_PASS=...)
+# optional, only if the key password differs: GP_KEY_PASS
+./gradlew assembleRelease
+```
+`assembleDebug` needs no password. The `.jks` itself stays untracked (see `.gitignore`).
+
 ## Notes
 - Loads the hosted app at `https://global-pulse-two.vercel.app/?tv=1.4` — change `APP_URL`
   in `MainActivity.java` to self-host.

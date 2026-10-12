@@ -6,20 +6,31 @@ android {
     applicationId 'io.dsio.globalpulse'
     minSdk 22
     targetSdk 34
-    versionCode 1
-    versionName '1.0'
+    versionCode 2
+    versionName '1.0.1'
   }
   signingConfigs {
     release {
       // Throwaway key: the Amazon Appstore strips this and re-signs with your
       // account's own key on submission. The .jks is gitignored.
       storeFile file('../globalpulse-release.jks')
-      storePassword 'globalpulse'
       keyAlias 'globalpulse'
-      keyPassword 'globalpulse'
+      // Passwords come from -PGP_KS_PASS=... / env GP_KS_PASS (and optionally GP_KEY_PASS,
+      // which defaults to the keystore password). Required for release builds only.
+      def ksPass = project.findProperty('GP_KS_PASS') ?: System.getenv('GP_KS_PASS')
+      def keyPass = project.findProperty('GP_KEY_PASS') ?: System.getenv('GP_KEY_PASS') ?: ksPass
+      if (ksPass) { storePassword ksPass; keyPassword keyPass }
     }
   }
   buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
   compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
 }
 dependencies { }
+
+// Fail loudly (release builds only) when the signing password was not provided.
+gradle.taskGraph.whenReady { graph ->
+  def pass = project.findProperty('GP_KS_PASS') ?: System.getenv('GP_KS_PASS')
+  if (!pass && graph.allTasks.any { it.project == project && it.name.toLowerCase().contains('release') }) {
+    throw new GradleException('Release signing needs the keystore password: set env GP_KS_PASS (or pass -PGP_KS_PASS=...). Optionally GP_KEY_PASS for a different key password.')
+  }
+}
