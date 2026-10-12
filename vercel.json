@@ -7,6 +7,12 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()" }
       ]
+    },
+    {
+      "source": "/((?!api/).*)",
+      "headers": [
+        { "key": "Content-Security-Policy-Report-Only", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https: data: blob:; connect-src 'self' https://earthquake.usgs.gov https://api.gdeltproject.org https://api.allorigins.win; frame-src https:; object-src 'none'; base-uri 'self'" }
+      ]
     }
   ]
 }
