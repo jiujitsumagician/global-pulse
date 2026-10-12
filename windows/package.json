@@ -9,8 +9,8 @@
     "postbuild": "echo Rename dist/GlobalPulse.exe to GlobalPulse.scr and right-click > Install"
   },
   "devDependencies": {
-    "electron": "^31.3.1",
-    "electron-builder": "^24.13.3"
+    "electron": "^41.10.7",
+    "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "io.dsio.globalpulse.screensaver",

@@ -26,7 +26,8 @@ npm start -- /s
 ```
 
 ## Config
-- Data + UI come from the hosted app. Point it elsewhere with an env var:
+- Data + UI come from the hosted app. For development, point it elsewhere with an env var
+  (honoured only when running unpackaged via `npm start`, not in the built .exe):
   `set GP_URL=https://your-host/?tv=1.4 && npm start -- /s`
 - Flags: `/s` run, `/p` preview (no-op), `/c` config (no-op).
 
