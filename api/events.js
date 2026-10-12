@@ -171,7 +171,7 @@ async function getLaunches(){
 
 // --- RSS news from major global outlets (geolocated by headline) ---
 const FEEDS=[
-  ['BBC','http://feeds.bbci.co.uk/news/world/rss.xml'],
+  ['BBC','https://feeds.bbci.co.uk/news/world/rss.xml'],
   ['The Guardian','https://www.theguardian.com/world/rss'],
   ['Al Jazeera','https://www.aljazeera.com/xml/rss/all.xml'],
   ['NPR','https://feeds.npr.org/1004/rss.xml'],
@@ -232,12 +232,33 @@ function dedupe(arr){ const su=new Set(), st=new Set(), out=[];
   return out;
 }
 
+// Only http(s) URLs may reach clients (blocks javascript:/data: etc. from feeds).
+// Protocol-relative URLs ("//host/x.jpg") are upgraded to https.
+const safeUrl=u=>{ try{ let v=String(u); if(v.startsWith('//')) v='https:'+v; const p=new URL(v);
+  return (p.protocol==='https:'||p.protocol==='http:')?p.href:''; }catch(e){ return ''; } };
+function sanitizeEvents(list){
+  const out=[];
+  for(const e of list){
+    const had=!!e.url;
+    if(had) e.url=safeUrl(e.url);
+    if(e.image) e.image=safeUrl(e.image);
+    if(had && !e.url && e.type==='News') continue;     // a news item without a safe link is dropped
+    out.push(e);
+  }
+  return out;
+}
+
 // in-memory last-good cache (persists across warm invocations) so a transient
 // GDELT rate-limit doesn't blank the feed
 let LASTGOOD = { news:[], ts:0 };
 
-module.exports = async (req,res)=>{
-  res.setHeader('Access-Control-Allow-Origin','*');
+// Short in-process memo + request coalescing: the CDN cache key includes the query string,
+// so cache-busting query strings would otherwise re-run the whole upstream fan-out each time.
+const MEMO_TTL = 60*1000;
+const CC_OK = 's-maxage=180, stale-while-revalidate=600';
+let MEMO = { ts:0, body:null, pending:null };
+
+async function build(){
   let gdelt=[], quakes=[], nature=[], space=[], rss=[], weather=[];
   try{ [gdelt,quakes,nature,space,rss,weather]=await Promise.all(
     [getNews(),getQuakes(),getEonet(),getLaunches(),getRss(),getWeather()]); }catch(e){}
@@ -245,9 +266,22 @@ module.exports = async (req,res)=>{
   let cached=false;
   if(news.length){ LASTGOOD={ news, ts:Date.now() }; }
   else if(LASTGOOD.news.length && Date.now()-LASTGOOD.ts < 25*60*1000){ news=LASTGOOD.news; cached=true; }
-  const events=[...news,...weather,...nature,...space,...quakes].sort((a,b)=>b.time-a.time);
-  res.setHeader('Cache-Control', news.length ? 's-maxage=180, stale-while-revalidate=600' : 's-maxage=8');
-  res.status(200).json({ updated:Date.now(),
-    counts:{news:news.length,rss:rss.length,gdelt:gdelt.length,weather:weather.length,nature:nature.length,space:space.length,quakes:quakes.length,cached}, events });
+  const events=sanitizeEvents([...news,...weather,...nature,...space,...quakes]).sort((a,b)=>b.time-a.time);
+  const body={ updated:Date.now(),
+    counts:{news:news.length,rss:rss.length,gdelt:gdelt.length,weather:weather.length,nature:nature.length,space:space.length,quakes:quakes.length,cached}, events };
+  return { body, hasNews:news.length>0 };
+}
+
+module.exports = async (req,res)=>{
+  res.setHeader('Access-Control-Allow-Origin','*');
+  if(MEMO.body && Date.now()-MEMO.ts<MEMO_TTL){
+    res.setHeader('Cache-Control', CC_OK);
+    res.status(200).json(MEMO.body); return;
+  }
+  if(!MEMO.pending) MEMO.pending=build().finally(()=>{ MEMO.pending=null; });
+  const { body, hasNews }=await MEMO.pending;
+  if(hasNews){ MEMO.ts=Date.now(); MEMO.body=body; }
+  res.setHeader('Cache-Control', hasNews ? CC_OK : 's-maxage=8');
+  res.status(200).json(body);
 };
-module.exports.getRss=getRss; module.exports.getWeather=getWeather; module.exports.placeOf=placeOf;
+module.exports.getRss=getRss; module.exports.getWeather=getWeather; module.exports.placeOf=placeOf; module.exports.safeUrl=safeUrl; module.exports.sanitizeEvents=sanitizeEvents;

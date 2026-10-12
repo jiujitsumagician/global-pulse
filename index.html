@@ -183,7 +183,7 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/globe.gl"></script>
+<script src="https://unpkg.com/globe.gl@2.46.2/dist/globe.gl.min.js" integrity="sha384-1uolMBZ25k3zJcNwCLEv49+L+m2dZudqAzsoSAJfQTzDCSBxJzrMuZ2dkp/5JKiT" crossorigin="anonymous"></script>
 <script>
 (()=>{
 "use strict";
@@ -301,6 +301,7 @@ function focusId(id,manual){ const ev=events.find(e=>e.id===id); if(ev) focus(ev
 function pause(){ paused=true; clearTimeout(pauseT); pauseT=setTimeout(()=>paused=false,45000); }
 function tick(){ if(paused||readerOpen||!playlist.length) return; cur=(cur+1)%playlist.length; focus(playlist[cur],false); }
 
+const okImg=u=>/^https?:\/\//i.test(u||'');   // only http(s) image URLs are ever used
 function renderDetail(ev){
   const c=cat(ev); $('detail').classList.add('show');
   const tag=$('dTag'); tag.textContent=c.label.toUpperCase(); tag.style.color=c.c; tag.style.borderColor=c.c;
@@ -310,7 +311,7 @@ function renderDetail(ev){
   $('dCoords').textContent=ev.lat.toFixed(2)+'°, '+ev.lng.toFixed(2)+'°';
   $('dSrc').textContent=(ev.source||'').toUpperCase();
   const img=$('dImg'); img.classList.remove('on');
-  if(ev.image){ $('dHero').style.display=''; img.onload=()=>img.classList.add('on'); img.onerror=()=>{ $('dHero').style.display='none'; }; img.src=ev.image; }
+  if(okImg(ev.image)){ $('dHero').style.display=''; img.onload=()=>img.classList.add('on'); img.onerror=()=>{ $('dHero').style.display='none'; }; img.src=ev.image; }
   else { $('dHero').style.display='none'; img.removeAttribute('src'); }
   $('dQr').src='https://api.qrserver.com/v1/create-qr-code/?size=130x130&margin=0&data='+encodeURIComponent(ev.url||'');
   $('dBlurb').innerHTML='<div class="skel" style="width:96%"></div><div class="skel" style="width:88%"></div><div class="skel" style="width:64%"></div>';
@@ -325,7 +326,7 @@ async function loadDetail(ev){
   if(seq!==detailSeq) return;          // a newer focus superseded this
   const paras=(info&&info.paragraphs&&info.paragraphs.length)? info.paragraphs : fallbackBlurb(ev);
   $('dBlurb').innerHTML=paras.slice(0,3).map(p=>'<p>'+esc(p)+'</p>').join('');
-  if(!ev.image && info && info.images && info.images[0]){ $('dHero').style.display=''; const img=$('dImg'); img.onload=()=>img.classList.add('on'); img.src=info.images[0]; }
+  if(!okImg(ev.image) && info && info.images && okImg(info.images[0])){ $('dHero').style.display=''; const img=$('dImg'); img.onload=()=>img.classList.add('on'); img.src=info.images[0]; }
 }
 function fallbackBlurb(ev){
   if(ev.category==='Quake') return ['A magnitude '+(ev.mag||'?')+' earthquake was recorded near '+ev.place+'.',
@@ -344,7 +345,7 @@ function renderRelated(ev){
   if(!near.length){ box.innerHTML=''; head.style.display='none'; return; }
   head.style.display='block';
   box.innerHTML=near.map(e=>{ const cc=cat(e);
-    const im=e.image? '<img src="'+esc(e.image)+'">' : '';
+    const im=okImg(e.image)? '<img src="'+esc(e.image)+'">' : '';
     return '<div class="drel" data-id="'+esc(e.id)+'">'+im+'<div class="rt" style="border-left:2px solid '+cc.c+';padding-left:7px">'+esc(e.title)+'</div></div>';
   }).join('');
   box.querySelectorAll('.drel').forEach(el=>el.onclick=()=>focusId(el.dataset.id,true));
@@ -353,6 +354,7 @@ function renderRelated(ev){
 /* ---------------- in-app reader ---------------- */
 let _frame=null;
 function openReader(){ const ev=current; if(!ev||!ev.url) return;
+  if(!/^https?:\/\//i.test(ev.url)) return;                          // never load javascript:/data:/file: URLs
   if(window.GPNative&&window.GPNative.openArticle){ window.GPNative.openArticle(ev.url); return; }  // Fire TV / native wrapper
   const host=$('readerHost'); host.innerHTML='';
   const useWV=!!window.GPElectron;                                   // Electron embedded browser
