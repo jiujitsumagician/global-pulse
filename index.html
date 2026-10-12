@@ -359,7 +359,7 @@ function openReader(){ const ev=current; if(!ev||!ev.url) return;
   const host=$('readerHost'); host.innerHTML='';
   const useWV=!!window.GPElectron;                                   // Electron embedded browser
   _frame=document.createElement(useWV?'webview':'iframe'); _frame.setAttribute('src',ev.url);
-  if(!useWV){ _frame.setAttribute('referrerpolicy','no-referrer'); _frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups'); }
+  if(!useWV){ _frame.setAttribute('referrerpolicy','no-referrer'); _frame.setAttribute('sandbox','allow-scripts allow-popups'); }
   host.appendChild(_frame);
   const c=cat(ev); const rt=$('rTag'); rt.textContent=c.label.toUpperCase(); rt.style.color=c.c;
   $('readerTitle').textContent=ev.title; $('readerUrl').textContent=ev.url;
