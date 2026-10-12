@@ -233,7 +233,6 @@ async function safeFetch(startUrl,signal){
 const EMPTY = ()=>({ paragraphs:[], images:[] });
 
 module.exports = async (req,res)=>{
-  res.setHeader('Access-Control-Allow-Origin','*');
   res.setHeader('Cache-Control','s-maxage=900, stale-while-revalidate=3600');
   let url = (req.query && req.query.url) || '';
   if(!url){ try{ url=new URL(req.url,'http://x').searchParams.get('url')||''; }catch(e){} }
